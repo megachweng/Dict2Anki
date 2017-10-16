@@ -11,6 +11,7 @@ import sys
 from sys import platform
 from os.path import expanduser
 import traceback
+import StringIO
 # Anki
 from aqt import mw
 from aqt.qt import *
@@ -127,10 +128,17 @@ class Window(QWidget):
         self.thread.start()
         while not self.thread.isFinished():
             mw.app.processEvents()
-
+        try:
+            note = Note(self, self.thread.results['lookUpedTerms'], comparedTerms['deleted'])
+            note.processNote(self.deckList.currentText())
+        except:
+            fp = StringIO.StringIO()
+            traceback.print_exc(file=fp)
+            message = fp.getvalue()
+            self.debug.appendPlainText(str(message))
         self.thread = imageDownloader(self, self.thread.results['imageUrls'])
         self.thread.start()
-        self.saveCurrent(current)
+        # self.saveCurrent(current)
 
     def getCurrent(self):
         conn = sqlite3.connect(eudictDB)
@@ -202,6 +210,7 @@ class lookUp(QThread):
         for term in self.new:
             self.window.debug.appendPlainText("looking up: " + term)
             r = self.publicAPI(term)
+        self.window.debug.appendPlainText("looking up thread Finished")
 
     def publicAPI(self, q):
         query = urllib.urlencode({"q": q})
@@ -217,7 +226,7 @@ class lookUp(QThread):
                 try:
                     explains = json_result["fanyi"]["tran"]
                 except:
-                    explains = None
+                    explains = "None"
 
         try:
             uk_phonetic = json_result["ec"]["word"][0]["ukphone"]
@@ -228,7 +237,7 @@ class lookUp(QThread):
                 try:
                     uk_phonetic = json_result["ec"]["word"][0]["phone"]
                 except:
-                    uk_phonetic = None
+                    uk_phonetic = "None"
 
         try:
             us_phonetic = json_result["ec"]["word"][0]["usphone"]
@@ -239,7 +248,7 @@ class lookUp(QThread):
                 try:
                     us_phonetic = json_result["ec"]["word"][0]["phone"]
                 except:
-                    us_phonetic = None
+                    us_phonetic = "None"
         try:
             phrases = []
             phrase_explains = []
@@ -248,8 +257,8 @@ class lookUp(QThread):
                 phrases.append(value["phr"]["headword"]["l"]["i"])
                 phrase_explains.append(value["phr"]["trs"][0]["tr"]["l"]["i"])
         except:
-            phrases = ["No phrase"]
-            phrase_explains = ["No phrase definition"]
+            phrases = [None]
+            phrase_explains = [None]
 
         try:
             sentences = []
@@ -273,11 +282,11 @@ class lookUp(QThread):
 
         lookUpedTerms = {
             "term": q,
-            "uk_phonetic": uk_phonetic,
-            "us_phonetic": us_phonetic,
+            "uk": uk_phonetic,
+            "us": us_phonetic,
             "definition": explains,
             "phrases": phrases[:3],
-            "phrase_explains": phrase_explains[:3],
+            "phrases_explains": phrase_explains[:3],
             "sentences": sentences[:3],
             "sentences_explains": sentences_explains[:3],
             "image": img
@@ -298,8 +307,170 @@ class imageDownloader(QThread):
 
         for imageUrl in self.imageUrls:
             self.window.debug.appendPlainText("Download image of " + imageUrl[1])
-            urllib.urlretrieve(imageUrl[0], "Deck2Anki/" + imageUrl[1] + ".jpg")
+            urllib.urlretrieve(imageUrl[0], "Deck2Anki/" + imageUrl[1])
         # "Dict2Anki/" + q + ".jpg"
+
+
+class Note(object):
+    def __init__(self, window, new, deleted):
+        self.new = new
+        self.deleted = deleted
+        self.window = window
+
+    def addCustomModel(self, name, col):
+        """create a new custom model for the imported deck"""
+        mm = col.models
+        existing = mm.byName("Dict2Anki")
+        if existing:
+            return existing
+        m = mm.new("Dict2Anki")
+        m['css'] = """.card{font-family:arial;font-size:14px;text-align:left;color:#212121;background-color:white}.pronounce{line-height:30px;font-size:24px;margin-bottom:0;word-break:break-all}.phonetic{font-size:14px;margin-left:.2em;font-family:"lucida sans unicode",arial,sans-serif;color:#01848f}.term{vertical-align:bottom;margin-right:15px}.divider{margin:1em 0 1em 0;border-bottom:2px solid #4caf50}.phrase,.sentence{color:#01848f;padding-right:1em}tr{vertical-align:top}"""
+
+        # add fields
+        mm.addField(m, mm.newField("term"))
+        mm.addField(m, mm.newField("definition"))
+        mm.addField(m, mm.newField("uk"))
+        mm.addField(m, mm.newField("us"))
+        mm.addField(m, mm.newField("fphrase0"))
+        mm.addField(m, mm.newField("fphrase1"))
+        mm.addField(m, mm.newField("fphrase2"))
+        mm.addField(m, mm.newField("bphrase0"))
+        mm.addField(m, mm.newField("bphrase1"))
+        mm.addField(m, mm.newField("bphrase2"))
+        mm.addField(m, mm.newField("fsentence0"))
+        mm.addField(m, mm.newField("fsentence1"))
+        mm.addField(m, mm.newField("fsentence2"))
+        mm.addField(m, mm.newField("bsentence0"))
+        mm.addField(m, mm.newField("bsentence1"))
+        mm.addField(m, mm.newField("bsentence2"))
+        mm.addField(m, mm.newField("image"))
+        mm.addField(m, mm.newField("display"))
+
+        # add cards
+        t = mm.newTemplate("Normal")
+        t['qfmt'] = """\
+            <table>
+            <tr>
+            <td>
+            <h1 class="term">{{term}}</h1>
+                <div class="pronounce">
+                    <span class="phonetic">UK[{{uk}}]</span> 
+                    <span class="phonetic">US[{{us}}]</span>
+                </div>
+                <div class="definiton">Tap To View</div>
+            </td>
+            <td>
+                {{image}}
+            </td>
+            </tr>
+            </table>
+
+            <div class="divider"></div>
+
+            <table>
+                {{fphrase0}}
+                {{fphrase1}}
+                {{fphrase2}}
+            </table>
+            <table>
+                {{fsentence0}}
+                {{fsentence1}}
+                {{fsentence2}}
+            </table>
+        """
+        t['afmt'] = """\
+            <table>
+            <tr>
+            <td>
+            <h1 class="term">{{term}}</h1>
+                <div class="pronounce">
+                    <span class="phonetic">UK[{{uk}}]</span><span class="phonetic">US[{{us}}]</span>
+                </div>
+                <div class="definiton">"{{definition}}"</div>
+            </td>
+            <td>
+                {{image}}
+            </td>
+            </tr>
+            </table>
+
+            <div class="divider"></div>
+
+            <table>
+                {{bphrase0}}
+                {{bphrase1}}
+                {{bphrase2}}
+            </table>
+            <table>
+                {{bsentence0}}
+                {{bsentence1}}
+                {{bsentence2}}
+            </table>
+        """
+
+        mm.addTemplate(m, t)
+        mm.add(m)
+        self.window.debug.appendPlainText("Return template")
+        return m
+
+    def processNote(self, deckName):
+        self.window.debug.appendPlainText("Processing Notes")
+        deck = mw.col.decks.get(mw.col.decks.id(deckName))
+
+        # create custom model
+        model = self.addCustomModel(deckName, mw.col)
+
+        # assign custom model to new deck
+        mw.col.decks.select(deck["id"])
+        mw.col.decks.get(deck)["mid"] = model["id"]
+        mw.col.decks.save(deck)
+
+        # assign new deck to custom model
+        mw.col.models.setCurrent(model)
+        mw.col.models.current()["did"] = deck["id"]
+        mw.col.models.save(model)
+
+        # start creating notes
+        if self.new:
+            for term in self.new:
+                note = mw.col.newNote()
+                note['term'] = term['term']
+                note['definition'] = term['definition']
+                note['uk'] = term['uk']
+                note['us'] = term['us']
+                for index, phrase in enumerate(term['phrases']):
+                    note['fphrase' + str(index)] = """<tr><td class="phrase">{}</td><td>Tap to View</td></tr>""".format(phrase)
+                    note['bphrase' + str(index)] = """<tr><td class="phrase">{}</td><td>{}</td></tr>""".format(phrase, term["phrases_explains"][index])
+
+                for index, sentence in enumerate(term['sentences']):
+                    note['fsentence' + str(index)] = """<tr><td class="sentence">{}</td><td>Tap to View</td></tr>""".format(sentence)
+                    note['bsentence' + str(index)] = """<tr><td class="sentence">{}</td><td>{}</td></tr>""".format(sentence, term['sentences_explains'][index])
+
+                if term['image']:
+                    if self.window.downloadimage.isChecked():
+                        note['image'] = "<img src = 'Deck2Anki/{}.jpg'>".format(term['image'])
+                    else:
+                        note['image'] = "<img src ='{}' >".format(term['image'])
+
+                mw.col.addNote(note)
+            mw.col.fixIntegrity()
+            mw.col.reset()
+            mw.reset()
+
+        # start deleting notes
+        if self.deleted:
+            self.window.debug.appendPlainText(json.dumps(self.deleted, indent=4))
+            # for term in self.deleted:
+            #     cardID = mw.col.findCards("term:" + term)
+            #     deckID = mw.col.decks.id(deckName)
+            #     for cid in cardID:
+            #         nid = mw.col.db.scalar("select nid from cards where id = ? and did = ?", cid, deckID)
+            #         if nid is not None:
+            #             mw.col.db.execute("delete from cards where id =?", cid)
+            #             mw.col.db.execute("delete from notes where id =?", nid)
+            # mw.col.fixIntegrity()
+            # mw.col.reset()
+            # mw.reset()
 
 
 def runYoudaoPlugin():
