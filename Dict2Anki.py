@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import urllib
 import urllib2
+import ssl
 import time
 import json
 import sqlite3
@@ -29,6 +30,7 @@ elif platform == "darwin":
     eudictDB = home + "/Library/Eudb_en/.study.dat"
     youdaoDB = home + "/Library/Containers/com.youdao.YoudaoDict/Data/Library/com.youdao.YoudaoDict/wordbook.db"
 elif platform == "win32":
+    ssl._create_default_https_context = ssl._create_unverified_context
     eudictDB = home + "\AppData\Roaming\Francochinois\eudic\study.db"
     youdaoDB = home + "\AppData\Local\Yodao\DeskDict\WbData\megachweng\local"
 
@@ -379,33 +381,7 @@ class Note(object):
             </table>
         """
         t['afmt'] = """\
-            <table>
-            <tr>
-            <td>
-            <h1 class="term">{{term}}</h1>
-                <div class="pronounce">
-                    <span class="phonetic">UK[{{uk}}]</span><span class="phonetic">US[{{us}}]</span>
-                </div>
-                <div class="definiton">"{{definition}}"</div>
-            </td>
-            <td>
-                {{image}}
-            </td>
-            </tr>
-            </table>
-
-            <div class="divider"></div>
-
-            <table>
-                {{bphrase0}}
-                {{bphrase1}}
-                {{bphrase2}}
-            </table>
-            <table>
-                {{bsentence0}}
-                {{bsentence1}}
-                {{bsentence2}}
-            </table>
+            
         """
 
         mm.addTemplate(m, t)
