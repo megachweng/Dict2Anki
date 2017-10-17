@@ -23,16 +23,21 @@ from PyQt4.QtGui import *
 reload(sys)
 sys.setdefaultencoding('utf-8')
 home = expanduser("~")
-# detecting operating system
-if platform == "linux" or platform == "linux2":
-    pass
-elif platform == "darwin":
-    eudictDB = home + "/Library/Eudb_en/.study.dat"
-    youdaoDB = home + "/Library/Containers/com.youdao.YoudaoDict/Data/Library/com.youdao.YoudaoDict/wordbook.db"
-elif platform == "win32":
-    ssl._create_default_https_context = ssl._create_unverified_context
-    eudictDB = home + "\AppData\Roaming\Francochinois\eudic\study.db"
-    youdaoDB = home + "\AppData\Local\Yodao\DeskDict\WbData\megachweng\local"
+# # detecting operating system
+# if platform == "linux" or platform == "linux2":
+#     showInfo("Does not support Linux at now!")
+# elif platform == "darwin":
+#     eudictDB = home + "/Library/Eudb_en/.study.dat"
+#     youdaoDB = home + "/Library/Containers/com.youdao.YoudaoDict/Data/Library/com.youdao.YoudaoDict/wordbook.db"
+# elif platform == "win32":
+#     ssl._create_default_https_context = ssl._create_unverified_context
+#     eudictDB = home + "\AppData\Roaming\Francochinois\eudic\study.db"
+#     youdaoDB = home + "\AppData\Local\Yodao\DeskDict\WbData"
+#     yo = filter(lambda x: x != "NoBody", os.walk(youdaoDB).next()[1])
+#     if len(yo) > 1:
+#         showInfo("")
+#     else:
+#         youdaoDB = youdaoDB + yo[0] + "\local"
 
 
 class Window(QWidget):
@@ -41,6 +46,8 @@ class Window(QWidget):
         super(Window, self).__init__(parent)
         self.initComponent()
         self.thread = None
+        self.eudictDB = False
+        self.YoudaoDict = False
 
     def initComponent(self):
         self.resize(380, 490)
@@ -55,10 +62,9 @@ class Window(QWidget):
         self.line.setFrameShadow(QFrame.Sunken)
         self.dictList = QComboBox(self.groupBox)
         self.dictList.setGeometry(QtCore.QRect(113, 50, 161, 26))
-        # self.dictList.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
-        # self.dictList.setFrame(False)
-        self.dictList.addItem("")
-        self.dictList.addItem("")
+        self.dictList.addItem("Youdao")
+        self.dictList.addItem("EuDict")
+        self.dictList.setCurrentIndex(0)
         self.widget = QWidget(self.groupBox)
         self.widget.setGeometry(QtCore.QRect(20, 10, 331, 34))
         self.decksection = QHBoxLayout(self.widget)
@@ -86,9 +92,6 @@ class Window(QWidget):
         self.downloadimage.setChecked(True)
         self.detials = QPushButton(self.groupBox)
         self.detials.setGeometry(QtCore.QRect(280, 50, 72, 32))
-
-        self.dictList.setItemText(0, "Youdao")
-        self.dictList.setItemText(1, "EuDict")
         self.label.setText("Sync to")
         self.syncButton.setText("Sync")
         self.downloadimage.setText("Save image")
@@ -104,7 +107,7 @@ class Window(QWidget):
     def initDB(self):
         conn = sqlite3.connect('Dict2Anki.db')
         cursor = conn.cursor()
-        cursor.execute('create table if not exists history (id INTEGER primary key, terms TEXT,time TEXT,deckname TEXT)')
+        cursor.execute('create table if not exists history (id INTEGER primary key, terms TEXT,time TEXT,deckname TEXT, dictname TEXT)')
         cursor.execute('create table if not exists settings (id INTEGER primary key,deckname TEXT, downloadimage INTEGER, dictname TEXT)')
         cursor.close()
         conn.commit()
@@ -129,10 +132,9 @@ class Window(QWidget):
                 self.dictList.setCurrentIndex(1)
             else:
                 self.dictList.setCurrentIndex(-1)
-                
+
             # self.debug.appendPlainText(str(self.dictList.findData(dictname)))
             self.debug.appendPlainText(str(dictname))
-            
 
     def saveSettings(self):
         self.debug.appendPlainText('SaveSettings')
@@ -162,7 +164,10 @@ class Window(QWidget):
 
     def sync(self):
         self.debug.appendPlainText("Click Sync")
+        self.detectLocalWordBookDB()
         current = self.getCurrent()
+        if current == "qstop":
+            return
         last = self.getLast()
         comparedTerms = self.compare(current, last)
         # stop the previous thread first
@@ -180,22 +185,65 @@ class Window(QWidget):
         self.saveCurrent(current)
         self.saveSettings()
 
+    def detectLocalWordBookDB(self):
+        # detecting operating system
+        if platform == "linux" or platform == "linux2":
+            showInfo("Does not support Linux at now!")
+        elif platform == "darwin":
+            self.eudictDB = home + "/Library/Eudb_en/.study.dat"
+            self.youdaoDB = home + "/Library/Containers/com.youdao.YoudaoDict/Data/Library/com.youdao.YoudaoDict/wordbook.db"
+        elif platform == "win32":
+            ssl._create_default_https_context = ssl._create_unverified_context
+            self.eudictDB = home + "\AppData\Roaming\Francochinois\eudic\study.db"
+            youdaoDB = home + "\AppData\Local\Yodao\DeskDict\WbData"
+            try:
+                yo = filter(lambda x: x != "NoBody", os.walk(youdaoDB).next()[1])
+                if len(yo) > 1:
+                    showInfo("Error 01:Youdao wordbook conflict!")
+                else:
+                    self.youdaoDB = youdaoDB + "\\" + yo[0] + "\local"
+            except:
+                pass
+
     def getCurrent(self):
-        conn = sqlite3.connect(eudictDB)
+        if self.dictList.currentText() == "Youdao":
+            DB = self.youdaoDB
+            if platform == "win32":
+                query = 'SELECT word FROM tb_local'
+            elif platform == "darwin":
+                query = 'SELECT WORD FROM WORDBOOK'
+
+        elif self.dictList.currentText() == "EuDict":
+            DB = self.eudictDB
+            query = 'SELECT word FROM cus_studyrate WHERE deleted = 0'
+
+        else:
+            showInfo('Please select a Dictionary')
+            return "qstop"
+
+        if not os.path.isfile(DB):
+            showInfo("Can't find Dictionary you selected!")
+            return "qstop"
+
+        conn = sqlite3.connect(DB)
         cursor = conn.cursor()
-        cursor.execute('SELECT word FROM cus_studyrate WHERE deleted = 0')
+        cursor.execute(query)
         values = cursor.fetchall()
         conn.commit()
         conn.close()
-        values = sum(map(list, values), [])
-        self.debug.appendPlainText("Got current terms")
+        if ((platform == "win32") and (self.dictList.currentText() == "Youdao")):
+            values = map(lambda x: x[:-1], sum(map(list, values), []))
+        else:
+            values = sum(map(list, values), [])
+        self.debug.appendPlainText("current terms:" + str(values))
         return values
 
     def saveCurrent(self, current):
+        dictname = self.dictList.currentText()
         deckname = self.deckList.currentText()
         conn = sqlite3.connect('Dict2Anki.db')
         cursor = conn.cursor()
-        cursor.execute('insert OR IGNORE into history (terms,time,deckname) values (?,?,?)', (pickle.dumps(current), time.strftime("%Y-%m-%d %H:%M:%S"), deckname))
+        cursor.execute('insert OR IGNORE into history (terms,time,deckname,dictname) values (?,?,?,?)', (pickle.dumps(current), time.strftime("%Y-%m-%d %H:%M:%S"), deckname, dictname))
         cursor.close()
         conn.commit()
         conn.close()
@@ -203,9 +251,10 @@ class Window(QWidget):
 
     def getLast(self):
         deckname = self.deckList.currentText()
+        dictname = self.dictList.currentText()
         conn = sqlite3.connect('Dict2Anki.db')
         cursor = conn.cursor()
-        cursor.execute("select * from history where deckname='%s'order by id desc limit 0, 1" % deckname)
+        cursor.execute("select * from history where deckname='%s' and dictname = '%s' order by id desc limit 0, 1" % (deckname, dictname))
         values = cursor.fetchall()
         cursor.close()
         conn.close()
