@@ -43,66 +43,109 @@ class Window(QWidget):
         self.thread = None
 
     def initComponent(self):
-        self.resize(321, 389)
+        self.resize(380, 490)
         self.groupBox = QGroupBox(self)
-        self.groupBox.setGeometry(QtCore.QRect(10, 10, 301, 161))
+        self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 471))
         self.groupBox.setTitle("")
-        self.layoutWidget = QWidget(self.groupBox)
-        self.layoutWidget.setGeometry(QtCore.QRect(10, 50, 291, 32))
-        self.horizontalLayout_2 = QHBoxLayout(self.layoutWidget)
-        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.downloadimage = QCheckBox(self.layoutWidget)
-        self.horizontalLayout_2.addWidget(self.downloadimage)
-        self.syncButton_2 = QPushButton(self.layoutWidget)
-        self.horizontalLayout_2.addWidget(self.syncButton_2)
-        self.layoutWidget1 = QWidget(self.groupBox)
-        self.layoutWidget1.setGeometry(QtCore.QRect(10, 120, 281, 20))
-        self.horizontalLayout_4 = QHBoxLayout(self.layoutWidget1)
-        self.horizontalLayout_4.setContentsMargins(0, 0, 0, 0)
-        self.total = QProgressBar(self.layoutWidget1)
-        self.total.setMaximum(2)
-        self.total.setProperty("value", 0)
-        self.horizontalLayout_4.addWidget(self.total)
-        self.label_3 = QLabel(self.layoutWidget1)
-        self.horizontalLayout_4.addWidget(self.label_3)
-        self.layoutWidget2 = QWidget(self.groupBox)
-        self.layoutWidget2.setGeometry(QtCore.QRect(10, 90, 281, 20))
-        self.horizontalLayout_3 = QHBoxLayout(self.layoutWidget2)
-        self.horizontalLayout_3.setContentsMargins(0, 0, 0, 0)
-        self.progress = QProgressBar(self.layoutWidget2)
-        self.progress.setProperty("value", 0)
-        self.horizontalLayout_3.addWidget(self.progress)
-        self.label_2 = QLabel(self.layoutWidget2)
-        self.horizontalLayout_3.addWidget(self.label_2)
-        self.label = QLabel(self.groupBox)
-        self.label.setGeometry(QtCore.QRect(12, 14, 46, 21))
-        self.deckList = QComboBox(self.groupBox)
-        self.deckList.setGeometry(QtCore.QRect(62, 12, 161, 26))
+        self.debug = QPlainTextEdit(self.groupBox)
+        self.debug.setGeometry(QtCore.QRect(20, 160, 321, 301))
+        self.line = QFrame(self.groupBox)
+        self.line.setGeometry(QtCore.QRect(20, 70, 325, 31))
+        self.line.setFrameShape(QFrame.HLine)
+        self.line.setFrameShadow(QFrame.Sunken)
+        self.dictList = QComboBox(self.groupBox)
+        self.dictList.setGeometry(QtCore.QRect(113, 50, 161, 26))
+        # self.dictList.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
+        # self.dictList.setFrame(False)
+        self.dictList.addItem("")
+        self.dictList.addItem("")
+        self.widget = QWidget(self.groupBox)
+        self.widget.setGeometry(QtCore.QRect(20, 10, 331, 34))
+        self.decksection = QHBoxLayout(self.widget)
+        self.decksection.setContentsMargins(0, 0, 0, 0)
+        self.label = QLabel(self.widget)
+        self.decksection.addWidget(self.label)
+        self.deckList = QComboBox(self.widget)
         self.deckList.setEditable(True)
-        self.syncButton = QPushButton(self.groupBox)
-        self.syncButton.setGeometry(QtCore.QRect(230, 10, 72, 32))
-        self.debug = QPlainTextEdit(self)
-        self.debug.setGeometry(QtCore.QRect(10, 180, 301, 192))
-        self.debug.setStyleSheet("background:black;color:orange")
+        self.decksection.addWidget(self.deckList)
+        self.syncButton = QPushButton(self.widget)
+        self.decksection.addWidget(self.syncButton)
+        self.decksection.setStretch(1, 1)
+        self.widget1 = QWidget(self.groupBox)
+        self.widget1.setGeometry(QtCore.QRect(21, 90, 321, 46))
+        self.progressSection = QVBoxLayout(self.widget1)
+        self.progressSection.setContentsMargins(0, 0, 0, 0)
+        self.term = QProgressBar(self.widget1)
+        self.term.setProperty("value", 0)
+        self.progressSection.addWidget(self.term)
+        self.total = QProgressBar(self.widget1)
+        self.total.setProperty("value", 0)
+        self.progressSection.addWidget(self.total)
+        self.downloadimage = QCheckBox(self.groupBox)
+        self.downloadimage.setGeometry(QtCore.QRect(18, 48, 91, 28))
+        self.downloadimage.setChecked(True)
+        self.detials = QPushButton(self.groupBox)
+        self.detials.setGeometry(QtCore.QRect(280, 50, 72, 32))
 
-        self.downloadimage.setText("Download images")
-        self.syncButton_2.setText("Show Details")
-        self.label_3.setText("Total")
-        self.label_2.setText("Term")
+        self.dictList.setItemText(0, "Youdao")
+        self.dictList.setItemText(1, "EuDict")
         self.label.setText("Sync to")
         self.syncButton.setText("Sync")
+        self.downloadimage.setText("Save image")
+        self.detials.setText("Details")
+
         self.syncButton.clicked.connect(self.sync)
 
         self.getDeckNames()
         self.initDB()
+        self.getSettings()
         self.show()  # shows the window
 
     def initDB(self):
         conn = sqlite3.connect('Dict2Anki.db')
         cursor = conn.cursor()
         cursor.execute('create table if not exists history (id INTEGER primary key, terms TEXT,time TEXT,deckname TEXT)')
-        cursor.execute('create table if not exists settings (id INTEGER primary key,deckname TEXT, downloadImage INTEGER)')
+        cursor.execute('create table if not exists settings (id INTEGER primary key,deckname TEXT, downloadimage INTEGER, dictname TEXT)')
         cursor.close()
+        conn.commit()
+        conn.close()
+
+    def getSettings(self):
+        conn = sqlite3.connect('Dict2Anki.db')
+        cursor = conn.cursor()
+        cursor.execute('select * from settings')
+        values = cursor.fetchall()
+        conn.commit()
+        conn.close()
+        if values:
+            self.debug.appendPlainText('GetSettingsFromDatabase')
+            deckname = values[0][1]
+            downloadimage = ((values[0][2] == 1) and True or False)
+            dictname = values[0][3]
+            self.downloadimage.setChecked(downloadimage)
+            if dictname == "Youdao":
+                self.dictList.setCurrentIndex(0)
+            elif dictname == "EuDict":
+                self.dictList.setCurrentIndex(1)
+            else:
+                self.dictList.setCurrentIndex(-1)
+                
+            # self.debug.appendPlainText(str(self.dictList.findData(dictname)))
+            self.debug.appendPlainText(str(dictname))
+            
+
+    def saveSettings(self):
+        self.debug.appendPlainText('SaveSettings')
+        deckname = self.deckList.currentText()
+        downloadimage = self.downloadimage.isChecked() and 1 or 0
+        dictname = self.dictList.currentText()
+        self.debug.appendPlainText('Settings:{} {} {}'.format(deckname, downloadimage, dictname))
+
+        conn = sqlite3.connect('Dict2Anki.db')
+        cursor = conn.cursor()
+        cursor.execute('INSERT OR IGNORE INTO settings (id,deckname,downloadimage,dictname) VALUES(?,?,?,?)', (1, deckname, downloadimage, dictname))
+        cursor.execute('UPDATE settings SET deckname=?,downloadimage=?,dictname=?  WHERE id=1', (deckname, downloadimage, dictname))
+        cursor.rowcount
         conn.commit()
         conn.close()
 
@@ -130,17 +173,12 @@ class Window(QWidget):
         self.thread.start()
         while not self.thread.isFinished():
             mw.app.processEvents()
-        try:
-            note = Note(self, self.thread.results['lookUpedTerms'], comparedTerms['deleted'])
-            note.processNote(self.deckList.currentText())
-        except:
-            fp = StringIO.StringIO()
-            traceback.print_exc(file=fp)
-            message = fp.getvalue()
-            self.debug.appendPlainText(str(message))
+        note = Note(self, self.thread.results['lookUpedTerms'], comparedTerms['deleted'])
+        note.processNote(self.deckList.currentText())
         self.thread = imageDownloader(self, self.thread.results['imageUrls'])
         self.thread.start()
-        # self.saveCurrent(current)
+        self.saveCurrent(current)
+        self.saveSettings()
 
     def getCurrent(self):
         conn = sqlite3.connect(eudictDB)
@@ -306,7 +344,8 @@ class imageDownloader(QThread):
 
     def run(self):
         self.window.debug.appendPlainText("Thread image downloading started")
-
+        if not os.path.exists("Deck2Anki"):
+            os.makedirs("Deck2Anki")
         for imageUrl in self.imageUrls:
             self.window.debug.appendPlainText("Download image of " + imageUrl[1])
             urllib.urlretrieve(imageUrl[0], "Deck2Anki/" + imageUrl[1])
@@ -333,20 +372,25 @@ class Note(object):
         mm.addField(m, mm.newField("definition"))
         mm.addField(m, mm.newField("uk"))
         mm.addField(m, mm.newField("us"))
-        mm.addField(m, mm.newField("fphrase0"))
-        mm.addField(m, mm.newField("fphrase1"))
-        mm.addField(m, mm.newField("fphrase2"))
-        mm.addField(m, mm.newField("bphrase0"))
-        mm.addField(m, mm.newField("bphrase1"))
-        mm.addField(m, mm.newField("bphrase2"))
-        mm.addField(m, mm.newField("fsentence0"))
-        mm.addField(m, mm.newField("fsentence1"))
-        mm.addField(m, mm.newField("fsentence2"))
-        mm.addField(m, mm.newField("bsentence0"))
-        mm.addField(m, mm.newField("bsentence1"))
-        mm.addField(m, mm.newField("bsentence2"))
+        mm.addField(m, mm.newField("phrase0"))
+        mm.addField(m, mm.newField("phrase1"))
+        mm.addField(m, mm.newField("phrase2"))
+        mm.addField(m, mm.newField("phrase_explain0"))
+        mm.addField(m, mm.newField("phrase_explain1"))
+        mm.addField(m, mm.newField("phrase_explain2"))
+        mm.addField(m, mm.newField("sentence0"))
+        mm.addField(m, mm.newField("sentence1"))
+        mm.addField(m, mm.newField("sentence2"))
+        mm.addField(m, mm.newField("sentence_explain0"))
+        mm.addField(m, mm.newField("sentence_explain1"))
+        mm.addField(m, mm.newField("sentence_explain2"))
+        mm.addField(m, mm.newField("pplaceHolder0"))
+        mm.addField(m, mm.newField("pplaceHolder1"))
+        mm.addField(m, mm.newField("pplaceHolder2"))
+        mm.addField(m, mm.newField("splaceHolder0"))
+        mm.addField(m, mm.newField("splaceHolder1"))
+        mm.addField(m, mm.newField("splaceHolder2"))
         mm.addField(m, mm.newField("image"))
-        mm.addField(m, mm.newField("display"))
 
         # add cards
         t = mm.newTemplate("Normal")
@@ -370,18 +414,45 @@ class Note(object):
             <div class="divider"></div>
 
             <table>
-                {{fphrase0}}
-                {{fphrase1}}
-                {{fphrase2}}
+                <tr><td class="phrase">{{phrase0}}</td><td>{{pplaceHolder0}}</td></tr>
+                <tr><td class="phrase">{{phrase1}}</td><td>{{pplaceHolder1}}</td></tr>
+                <tr><td class="phrase">{{phrase2}}</td><td>{{pplaceHolder2}}</td></tr>
             </table>
             <table>
-                {{fsentence0}}
-                {{fsentence1}}
-                {{fsentence2}}
+                <tr><td class="sentence">{{sentence0}}</td><td>{{splaceHolder0}}</td></tr>
+                <tr><td class="sentence">{{sentence1}}</td><td>{{splaceHolder1}}</td></tr>
+                <tr><td class="sentence">{{sentence2}}</td><td>{{splaceHolder2}}</td></tr>
             </table>
         """
         t['afmt'] = """\
-            
+            <table>
+            <tr>
+            <td>
+            <h1 class="term">{{term}}</h1>
+                <div class="pronounce">
+                    <span class="phonetic">UK[{{uk}}]</span> 
+                    <span class="phonetic">US[{{us}}]</span>
+                </div>
+                <div class="definiton">{{definition}}</div>
+            </td>
+            <td>
+                {{image}}
+            </td>
+            </tr>
+            </table>
+
+            <div class="divider"></div>
+
+            <table>
+                <tr><td class="phrase">{{phrase0}}</td><td>{{phrase_explain0}}</td></tr>
+                <tr><td class="phrase">{{phrase1}}</td><td>{{phrase_explain1}}</td></tr>
+                <tr><td class="phrase">{{phrase2}}</td><td>{{phrase_explain2}}</td></tr>
+            </table>
+            <table>
+                <tr><td class="sentence">{{sentence0}}</td><td>{{sentence_explain0}}</td></tr>
+                <tr><td class="sentence">{{sentence1}}</td><td>{{sentence_explain1}}</td></tr>
+                <tr><td class="sentence">{{sentence2}}</td><td>{{sentence_explain2}}</td></tr>
+            </table>
         """
 
         mm.addTemplate(m, t)
@@ -414,13 +485,16 @@ class Note(object):
                 note['definition'] = term['definition']
                 note['uk'] = term['uk']
                 note['us'] = term['us']
-                for index, phrase in enumerate(term['phrases']):
-                    note['fphrase' + str(index)] = """<tr><td class="phrase">{}</td><td>Tap to View</td></tr>""".format(phrase)
-                    note['bphrase' + str(index)] = """<tr><td class="phrase">{}</td><td>{}</td></tr>""".format(phrase, term["phrases_explains"][index])
-
-                for index, sentence in enumerate(term['sentences']):
-                    note['fsentence' + str(index)] = """<tr><td class="sentence">{}</td><td>Tap to View</td></tr>""".format(sentence)
-                    note['bsentence' + str(index)] = """<tr><td class="sentence">{}</td><td>{}</td></tr>""".format(sentence, term['sentences_explains'][index])
+                if term['phrases'][0]:
+                    for index, phrase in enumerate(term['phrases']):
+                        note['phrase' + str(index)] = phrase
+                        note['phrase_explain' + str(index)] = term['phrases_explains'][index]
+                        note['pplaceHolder' + str(index)] = "Tap To View"
+                if term['sentences'][0]:
+                    for index, sentence in enumerate(term['sentences']):
+                        note['sentence' + str(index)] = sentence
+                        note['sentence_explain' + str(index)] = term['sentences_explains'][index]
+                        note['splaceHolder' + str(index)] = "Tap To View"
 
                 if term['image']:
                     if self.window.downloadimage.isChecked():
@@ -432,21 +506,20 @@ class Note(object):
             mw.col.fixIntegrity()
             mw.col.reset()
             mw.reset()
-
         # start deleting notes
         if self.deleted:
             self.window.debug.appendPlainText(json.dumps(self.deleted, indent=4))
-            # for term in self.deleted:
-            #     cardID = mw.col.findCards("term:" + term)
-            #     deckID = mw.col.decks.id(deckName)
-            #     for cid in cardID:
-            #         nid = mw.col.db.scalar("select nid from cards where id = ? and did = ?", cid, deckID)
-            #         if nid is not None:
-            #             mw.col.db.execute("delete from cards where id =?", cid)
-            #             mw.col.db.execute("delete from notes where id =?", nid)
-            # mw.col.fixIntegrity()
-            # mw.col.reset()
-            # mw.reset()
+            for term in self.deleted:
+                cardID = mw.col.findCards("term:" + term)
+                deckID = mw.col.decks.id(deckName)
+                for cid in cardID:
+                    nid = mw.col.db.scalar("select nid from cards where id = ? and did = ?", cid, deckID)
+                    if nid is not None:
+                        mw.col.db.execute("delete from cards where id =?", cid)
+                        mw.col.db.execute("delete from notes where id =?", nid)
+            mw.col.fixIntegrity()
+            mw.col.reset()
+            mw.reset()
 
 
 def runYoudaoPlugin():
