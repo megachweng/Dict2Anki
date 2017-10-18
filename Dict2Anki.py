@@ -111,6 +111,8 @@ class Window(QWidget):
             deckname = values[0][1]
             downloadimage = ((values[0][2] == 1) and True or False)
             dictname = values[0][3]
+            if deckname:
+                self.deckList.setEditText(deckname)
             self.downloadimage.setChecked(downloadimage)
             if dictname == "Youdao":
                 self.dictList.setCurrentIndex(0)
@@ -504,8 +506,6 @@ class Note(object):
         mw.col.models.current()["did"] = deck["id"]
         mw.col.models.save(model)
 
-        self.window.debug.appendPlainText("D1")
-
         # start creating notes
         if self.new:
             for term in self.new:
@@ -524,7 +524,6 @@ class Note(object):
                         note['sentence' + str(index)] = sentence
                         note['sentence_explain' + str(index)] = term['sentences_explains'][index]
                         note['splaceHolder' + str(index)] = "Tap To View"
-
                 if term['image']:
                     if self.window.downloadimage.isChecked():
                         note['image'] = "<img src = 'Deck2Anki/{}.jpg'>".format(term['image'])
@@ -535,10 +534,9 @@ class Note(object):
             mw.col.fixIntegrity()
             mw.col.reset()
             mw.reset()
-        self.window.debug.appendPlainText("D2")
+
         # start deleting notes
         if self.deleted:
-            self.window.debug.appendPlainText(json.dumps(self.deleted, indent=4))
             for term in self.deleted:
                 cardID = mw.col.findCards("term:" + term)
                 deckID = mw.col.decks.id(deckName)
