@@ -23,21 +23,6 @@ from PyQt4.QtGui import *
 reload(sys)
 sys.setdefaultencoding('utf-8')
 home = expanduser("~")
-# # detecting operating system
-# if platform == "linux" or platform == "linux2":
-#     showInfo("Does not support Linux at now!")
-# elif platform == "darwin":
-#     eudictDB = home + "/Library/Eudb_en/.study.dat"
-#     youdaoDB = home + "/Library/Containers/com.youdao.YoudaoDict/Data/Library/com.youdao.YoudaoDict/wordbook.db"
-# elif platform == "win32":
-#     ssl._create_default_https_context = ssl._create_unverified_context
-#     eudictDB = home + "\AppData\Roaming\Francochinois\eudic\study.db"
-#     youdaoDB = home + "\AppData\Local\Yodao\DeskDict\WbData"
-#     yo = filter(lambda x: x != "NoBody", os.walk(youdaoDB).next()[1])
-#     if len(yo) > 1:
-#         showInfo("")
-#     else:
-#         youdaoDB = youdaoDB + yo[0] + "\local"
 
 
 class Window(QWidget):
@@ -45,7 +30,8 @@ class Window(QWidget):
     def __init__(self, parent=None):
         super(Window, self).__init__(parent)
         self.initComponent()
-        self.thread = None
+        self.thread1 = None
+        self.thread2 = None
         self.eudictDB = False
         self.YoudaoDict = False
 
@@ -163,32 +149,40 @@ class Window(QWidget):
         self.debug.appendPlainText('Get Deck Names list')
 
     def sync(self):
-        self.debug.appendPlainText("Click Sync")
+        self.syncButton.setEnabled(False)
+        if self.deckList.currentText() == "":
+            showInfo("Please enter Deck Name!")
+            self.syncButton.setEnabled(True)
+            return
         self.detectLocalWordBookDB()
         current = self.getCurrent()
         if current == "qstop":
+            self.syncButton.setEnabled(True)
             return
         last = self.getLast()
         comparedTerms = self.compare(current, last)
         # stop the previous thread first
-        if self.thread is not None:
-            self.thread.terminate()
+        if self.thread1 is not None:
+                self.thread1.terminate()
+        if self.thread2 is not None:
+                self.thread2.terminate()
         # download the data!
-        self.thread = lookUp(self, comparedTerms['new'])
-        self.thread.start()
-        while not self.thread.isFinished():
+        self.thread1 = lookUp(self, comparedTerms['new'])
+        self.thread1.start()
+        while not self.thread1.isFinished():
             mw.app.processEvents()
-        note = Note(self, self.thread.results['lookUpedTerms'], comparedTerms['deleted'])
+            self.thread1.wait(50)
+        note = Note(self, self.thread1.results['lookUpedTerms'], comparedTerms['deleted'])
         note.processNote(self.deckList.currentText())
-        self.thread = imageDownloader(self, self.thread.results['imageUrls'])
-        self.thread.start()
 
-        while not self.thread.isFinished():
-            mw.app.processEvents()
-        self.thread.terminate()
-
+        if self.thread1.results['imageUrls']:
+            self.thread2 = imageDownloader(self, self.thread1.results['imageUrls'])
+            self.thread2.start()
+            while not self.thread2.isFinished():
+                mw.app.processEvents()
         self.saveCurrent(current)
         self.saveSettings()
+        self.syncButton.setEnabled(True)
 
     def detectLocalWordBookDB(self):
         # detecting operating system
@@ -220,11 +214,7 @@ class Window(QWidget):
 
         elif self.dictList.currentText() == "EuDict":
             DB = self.eudictDB
-            query = 'SELECT word FROM cus_studyrate WHERE deleted = 0'
-
-        else:
-            showInfo('Please select a Dictionary')
-            return "qstop"
+            query = 'SELECT word FROM cus_studyrate WHERE deleted is 0'
 
         if not os.path.isfile(DB):
             showInfo("Can't find Dictionary you selected!")
@@ -243,30 +233,18 @@ class Window(QWidget):
         self.debug.appendPlainText("current terms:" + str(values))
         return values
 
-    def saveCurrent(self, current):
-        dictname = self.dictList.currentText()
-        deckname = self.deckList.currentText()
-        conn = sqlite3.connect('Dict2Anki.db')
-        cursor = conn.cursor()
-        cursor.execute('insert OR IGNORE into history (terms,time,deckname,dictname) values (?,?,?,?)', (pickle.dumps(current), time.strftime("%Y-%m-%d %H:%M:%S"), deckname, dictname))
-        cursor.close()
-        conn.commit()
-        conn.close()
-        self.debug.appendPlainText("Current words Saved")
-
     def getLast(self):
         deckname = self.deckList.currentText()
         dictname = self.dictList.currentText()
         conn = sqlite3.connect('Dict2Anki.db')
         cursor = conn.cursor()
-        cursor.execute("select * from history where deckname='%s' and dictname = '%s' order by id desc limit 0, 1" % (deckname, dictname))
+        cursor.execute("select terms from history where deckname='%s' and dictname = '%s' order by id desc limit 0, 1" % (deckname, dictname))
         values = cursor.fetchall()
         cursor.close()
         conn.close()
-        self.debug.appendPlainText("Got last terms")
-        # values[number of raw][0->id,1->terms,2->time]
         if values:
-            terms = pickle.loads(values[0][1])
+            terms = pickle.loads(values[0][0])
+            self.debug.appendPlainText("last terms:" + str(terms))
             return terms
         else:
             return False
@@ -278,32 +256,45 @@ class Window(QWidget):
             for term in last:
                 if term not in current:
                     data['deleted'].append(term)
-            if current:
-                for term in current:
-                    if term not in last:
-                        data['new'].append(term)
-                self.debug.appendPlainText(json.dumps(data, indent=4))
+            for term in current:
+                if term not in last:
+                    data['new'].append(term)
         else:
             self.debug.appendPlainText("First sync")
             data["new"] = current
+            data['deleted'] = None
 
         return data
+
+    def saveCurrent(self, current):
+        dictname = self.dictList.currentText()
+        deckname = self.deckList.currentText()
+        conn = sqlite3.connect('Dict2Anki.db')
+        cursor = conn.cursor()
+        cursor.execute('insert OR IGNORE into history (terms,time,deckname,dictname) values (?,?,?,?)', (pickle.dumps(current), time.strftime("%Y-%m-%d %H:%M:%S"), deckname, dictname))
+        cursor.close()
+        conn.commit()
+        conn.close()
+        self.debug.appendPlainText("Current words Saved")
 
 
 class lookUp(QThread):
     """thread that lookup terms from public API"""
 
     def __init__(self, window, new):
-        super(lookUp, self).__init__()
+        QThread.__init__(self)
         self.window = window
         self.results = {"lookUpedTerms": [], "imageUrls": []}
         self.new = new
+        self.window.debug.appendPlainText("init looker")
 
     def run(self):
         self.window.debug.appendPlainText("looking up thread")
-        for term in self.new:
-            self.window.debug.appendPlainText("looking up: " + term)
-            r = self.publicAPI(term)
+        if self.new:
+            self.window.term.setMaximum(len(self.new))
+            for term in self.new:
+                self.window.debug.appendPlainText("looking up: " + term)
+                self.publicAPI(term)
         self.window.debug.appendPlainText("looking up thread Finished")
 
     def publicAPI(self, q):
@@ -364,7 +355,6 @@ class lookUp(QThread):
         except:
             sentences = [None]
             sentences_explains = [None]
-        # window.progress.setValue(window.progress.value() + 1)
 
         try:
             img = json_result["pic_dict"]["pic"][0]["image"] + "&w=150"
@@ -386,24 +376,7 @@ class lookUp(QThread):
             "image": img
         }
         self.results['lookUpedTerms'].append(lookUpedTerms)
-
-
-class imageDownloader(QThread):
-    """thread that download images of terms"""
-
-    def __init__(self, window, imageUrls):
-        super(imageDownloader, self).__init__()
-        self.window = window
-        self.imageUrls = imageUrls
-
-    def run(self):
-        self.window.debug.appendPlainText("Thread image downloading started")
-        if not os.path.exists("Deck2Anki"):
-            os.makedirs("Deck2Anki")
-        for imageUrl in self.imageUrls:
-            self.window.debug.appendPlainText("Download image of " + imageUrl[1])
-            urllib.urlretrieve(imageUrl[0], "Deck2Anki/" + imageUrl[1])
-        # "Dict2Anki/" + q + ".jpg"
+        # self.window.term.setValue(self.window.term.value() + 1)
 
 
 class Note(object):
@@ -454,7 +427,7 @@ class Note(object):
             <td>
             <h1 class="term">{{term}}</h1>
                 <div class="pronounce">
-                    <span class="phonetic">UK[{{uk}}]</span> 
+                    <span class="phonetic">UK[{{uk}}]</span>
                     <span class="phonetic">US[{{us}}]</span>
                 </div>
                 <div class="definiton">Tap To View</div>
@@ -484,7 +457,7 @@ class Note(object):
             <td>
             <h1 class="term">{{term}}</h1>
                 <div class="pronounce">
-                    <span class="phonetic">UK[{{uk}}]</span> 
+                    <span class="phonetic">UK[{{uk}}]</span>
                     <span class="phonetic">US[{{us}}]</span>
                 </div>
                 <div class="definiton">{{definition}}</div>
@@ -579,6 +552,24 @@ class Note(object):
             mw.reset()
         self.window.debug.appendPlainText("Notes processed")
 
+
+class imageDownloader(QThread):
+    """thread that download images of terms"""
+
+    def __init__(self, window, imageUrls):
+        super(imageDownloader, self).__init__()
+        self.window = window
+        self.imageUrls = imageUrls
+
+    def run(self):
+        self.window.debug.appendPlainText("Thread image downloading started")
+        if not os.path.exists("Deck2Anki"):
+            os.makedirs("Deck2Anki")
+        for imageUrl in self.imageUrls:
+            self.window.debug.appendPlainText("Download image of " + imageUrl[1])
+            urllib.urlretrieve(imageUrl[0], "Deck2Anki/" + imageUrl[1])
+        # "Dict2Anki/" + q + ".jpg"
+        self.exit()
 
 
 def runYoudaoPlugin():
