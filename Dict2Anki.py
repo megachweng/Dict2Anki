@@ -182,6 +182,11 @@ class Window(QWidget):
         note.processNote(self.deckList.currentText())
         self.thread = imageDownloader(self, self.thread.results['imageUrls'])
         self.thread.start()
+
+        while not self.thread.isFinished():
+            mw.app.processEvents()
+        self.thread.terminate()
+
         self.saveCurrent(current)
         self.saveSettings()
 
@@ -273,11 +278,11 @@ class Window(QWidget):
             for term in last:
                 if term not in current:
                     data['deleted'].append(term)
-
-            for term in current:
-                if term not in last:
-                    data['new'].append(term)
-            self.debug.appendPlainText(json.dumps(data, indent=4))
+            if current:
+                for term in current:
+                    if term not in last:
+                        data['new'].append(term)
+                self.debug.appendPlainText(json.dumps(data, indent=4))
         else:
             self.debug.appendPlainText("First sync")
             data["new"] = current
@@ -526,6 +531,8 @@ class Note(object):
         mw.col.models.current()["did"] = deck["id"]
         mw.col.models.save(model)
 
+        self.window.debug.appendPlainText("D1")
+
         # start creating notes
         if self.new:
             for term in self.new:
@@ -555,6 +562,7 @@ class Note(object):
             mw.col.fixIntegrity()
             mw.col.reset()
             mw.reset()
+        self.window.debug.appendPlainText("D2")
         # start deleting notes
         if self.deleted:
             self.window.debug.appendPlainText(json.dumps(self.deleted, indent=4))
@@ -569,6 +577,8 @@ class Note(object):
             mw.col.fixIntegrity()
             mw.col.reset()
             mw.reset()
+        self.window.debug.appendPlainText("Notes processed")
+
 
 
 def runYoudaoPlugin():
