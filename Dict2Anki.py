@@ -34,11 +34,14 @@ class Window(QWidget):
         self.thread2 = None
         self.eudictDB = False
         self.YoudaoDict = False
+        self.detailsState = False
 
     def initComponent(self):
-        self.resize(380, 490)
+        # self.resize(380, 490)
+        self.resize(380, 160)
         self.groupBox = QGroupBox(self)
-        self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 471))
+        # self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 471))
+        self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 140))
         self.groupBox.setTitle("")
         self.debug = QPlainTextEdit(self.groupBox)
         self.debug.setGeometry(QtCore.QRect(20, 160, 321, 301))
@@ -84,11 +87,23 @@ class Window(QWidget):
         self.detials.setText("Details")
 
         self.syncButton.clicked.connect(self.sync)
+        self.detials.clicked.connect(self.showDetails)
 
         self.getDeckNames()
         self.initDB()
         self.getSettings()
         self.show()  # shows the window
+
+    def showDetails(self):
+        if self.detailsState:
+            self.resize(380, 160)
+            self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 140))
+            self.detials.setText("Details")
+        else:
+            self.resize(380, 490)
+            self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 471))
+            self.detials.setText("Details")
+        self.detailsState = not self.detailsState
 
     def initDB(self):
         conn = sqlite3.connect('Dict2Anki.db')
