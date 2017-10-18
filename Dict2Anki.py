@@ -200,6 +200,7 @@ class Window(QWidget):
         self.saveCurrent(current)
         self.saveSettings()
         self.syncButton.setEnabled(True)
+        self.debug.appendPlainText("Done\n--------------\n")
 
     def detectLocalWordBookDB(self):
         # detecting operating system
@@ -307,11 +308,20 @@ class lookUp(QThread):
 
     def run(self):
         self.window.debug.appendPlainText("looking up thread")
-        if self.new:
+        if len(self.new) > 0:
             self.window.term.setMaximum(len(self.new))
+            self.window.term.setValue(0)
+
             for term in self.new:
                 self.window.debug.appendPlainText("looking up: " + term)
                 self.publicAPI(term)
+                self.window.term.setValue(self.window.term.value() + 1)
+        if len(self.results['imageUrls']) > 0:
+            self.window.total.setValue(0)
+            self.window.total.setMaximum(len(self.results['imageUrls']))
+        else:
+            self.window.total.setMaximum(1)
+            self.window.total.setValue(1)
         self.window.debug.appendPlainText("looking up thread Finished")
 
     def publicAPI(self, q):
@@ -393,7 +403,6 @@ class lookUp(QThread):
             "image": img
         }
         self.results['lookUpedTerms'].append(lookUpedTerms)
-        # self.window.term.setValue(self.window.term.value() + 1)
 
 
 class Note(object):
@@ -581,6 +590,7 @@ class imageDownloader(QThread):
         for imageUrl in self.imageUrls:
             self.window.debug.appendPlainText("Download image of " + imageUrl[1])
             urllib.urlretrieve(imageUrl[0], "Deck2Anki/" + imageUrl[1])
+            self.window.total.setValue(self.window.total.value() + 1)
         # "Dict2Anki/" + q + ".jpg"
         self.exit()
 
