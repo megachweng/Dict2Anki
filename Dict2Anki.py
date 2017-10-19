@@ -38,7 +38,7 @@ class Window(QWidget):
 
     def initComponent(self):
         self.setWindowTitle("Dict2Anki")
-        self.setFixedSize(380,160)
+        self.setFixedSize(380, 160)
         self.groupBox = QGroupBox(self)
         self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 140))
         self.groupBox.setTitle("")
@@ -279,7 +279,7 @@ class Window(QWidget):
         else:
             self.debug.appendPlainText("First sync")
             data["new"] = current
-            data['deleted'] = None
+            data['deleted'] = []
 
         return data
 
@@ -310,6 +310,7 @@ class lookUp(QThread):
         if len(self.new) > 0:
             self.window.term.setMaximum(len(self.new))
             self.window.term.setValue(0)
+            self.window.total.setValue(0)
 
             for term in self.new:
                 self.window.debug.appendPlainText("looking up: " + term)
@@ -321,6 +322,7 @@ class lookUp(QThread):
         else:
             self.window.total.setMaximum(1)
             self.window.total.setValue(1)
+            self.window.syncButton.setEnabled(True)
         self.window.debug.appendPlainText("looking up thread Finished")
 
     def publicAPI(self, q):
@@ -572,6 +574,7 @@ class Note(object):
             mw.col.reset()
             mw.reset()
         self.window.debug.appendPlainText("Notes processed")
+        tooltip('Added : ' + str(len(self.new)) + '<br><br>Deleted : ' + str(len(self.deleted)), period=3000)
 
 
 class imageDownloader(QThread):
@@ -584,14 +587,14 @@ class imageDownloader(QThread):
 
     def run(self):
         self.window.debug.appendPlainText("Thread image downloading started")
+        self.window.setWindowTitle("Downloading Images")
         if not os.path.exists("Deck2Anki"):
             os.makedirs("Deck2Anki")
         for imageUrl in self.imageUrls:
             self.window.debug.appendPlainText("Download image of " + imageUrl[1])
             urllib.urlretrieve(imageUrl[0], "Deck2Anki/" + imageUrl[1])
             self.window.total.setValue(self.window.total.value() + 1)
-        # "Dict2Anki/" + q + ".jpg"
-        self.exit()
+        self.window.setWindowTitle("Dict2Anki")
 
 
 def runYoudaoPlugin():
