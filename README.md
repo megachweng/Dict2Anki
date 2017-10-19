@@ -1,8 +1,7 @@
 # Dict2Anki
-**只支持 Anki 2.0.x.**
-**Only supports Anki 2.0.x.**  
+##### **只支持 Anki 2.0.x.** **Only supports Anki 2.0.x.**  
 **Dict2Anki** 是一款方便[有道词典](http://cidian.youdao.com/multi.html)、[欧陆词典](https://www.eudic.net/)用户同步生成本地单词本卡片至[Anki](https://apps.ankiweb.net/#download)的插件  
-**Dict2Anki** is a Anki addon makes it easy for[Youdao](http://cidian.youdao.com/multi.html) and [Eudict](https://www.eudic.net/) user to sync and generage their wordBook card to [Anki](https://apps.ankiweb.net/#download)
+**Dict2Anki** is a Anki addon makes it easy for[Youdao](http://cidian.youdao.com/multi.html) and [Eudict](https://www.eudic.net/) user to sync their wordBook card to [Anki](https://apps.ankiweb.net/#download)
 
 ## 特点介绍 Feature
 - 支持导入有道词典、欧陆词典生词本  
