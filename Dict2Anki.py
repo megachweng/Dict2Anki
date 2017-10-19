@@ -165,41 +165,42 @@ class Window(QWidget):
         self.debug.appendPlainText('Get Deck Names list')
 
     def sync(self):
-        self.syncButton.setEnabled(False)
-        if self.deckList.currentText() == "":
-            showInfo("Please enter Deck Name!")
-            self.syncButton.setEnabled(True)
-            return
-        self.detectLocalWordBookDB()
-        current = self.getCurrent()
-        if current == "qstop":
-            self.syncButton.setEnabled(True)
-            return
-        last = self.getLast()
-        comparedTerms = self.compare(current, last)
-        # stop the previous thread first
-        if self.thread1 is not None:
-                self.thread1.terminate()
-        if self.thread2 is not None:
-                self.thread2.terminate()
-        # download the data!
-        self.thread1 = lookUp(self, comparedTerms['new'])
-        self.thread1.start()
-        while not self.thread1.isFinished():
-            mw.app.processEvents()
-            self.thread1.wait(50)
-        note = Note(self, self.thread1.results['lookUpedTerms'], comparedTerms['deleted'])
-        note.processNote(self.deckList.currentText())
-
-        if self.thread1.results['imageUrls']:
-            self.thread2 = imageDownloader(self, self.thread1.results['imageUrls'])
-            self.thread2.start()
-            while not self.thread2.isFinished():
+        if askUser('Sync Now?'):
+            self.syncButton.setEnabled(False)
+            if self.deckList.currentText() == "":
+                showInfo("Please enter Deck Name!")
+                self.syncButton.setEnabled(True)
+                return
+            self.detectLocalWordBookDB()
+            current = self.getCurrent()
+            if current == "qstop":
+                self.syncButton.setEnabled(True)
+                return
+            last = self.getLast()
+            comparedTerms = self.compare(current, last)
+            # stop the previous thread first
+            if self.thread1 is not None:
+                    self.thread1.terminate()
+            if self.thread2 is not None:
+                    self.thread2.terminate()
+            # download the data!
+            self.thread1 = lookUp(self, comparedTerms['new'])
+            self.thread1.start()
+            while not self.thread1.isFinished():
                 mw.app.processEvents()
-        self.saveCurrent(current)
-        self.saveSettings()
-        self.syncButton.setEnabled(True)
-        self.debug.appendPlainText("Done\n--------------\n")
+                self.thread1.wait(50)
+            note = Note(self, self.thread1.results['lookUpedTerms'], comparedTerms['deleted'])
+            note.processNote(self.deckList.currentText())
+
+            if self.thread1.results['imageUrls']:
+                self.thread2 = imageDownloader(self, self.thread1.results['imageUrls'])
+                self.thread2.start()
+                while not self.thread2.isFinished():
+                    mw.app.processEvents()
+            self.saveCurrent(current)
+            self.saveSettings()
+            self.syncButton.setEnabled(True)
+            self.debug.appendPlainText("Done\n--------------\n")
 
     def detectLocalWordBookDB(self):
         # detecting operating system
@@ -606,6 +607,6 @@ def runYoudaoPlugin():
         traceback.print_exc(file=open('error.log', 'w+'))
 
 # create menu item
-action = QAction("Import your WordList", mw)
+action = QAction("Import your WordBook", mw)
 mw.connect(action, SIGNAL("triggered()"), runYoudaoPlugin)
 mw.form.menuTools.addAction(action)
