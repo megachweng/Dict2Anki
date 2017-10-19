@@ -37,10 +37,9 @@ class Window(QWidget):
         self.detailsState = False
 
     def initComponent(self):
-        # self.resize(380, 490)
-        self.resize(380, 160)
+        self.setWindowTitle("Dict2Anki")
+        self.setFixedSize(380,160)
         self.groupBox = QGroupBox(self)
-        # self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 471))
         self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 140))
         self.groupBox.setTitle("")
         self.debug = QPlainTextEdit(self.groupBox)
@@ -96,11 +95,11 @@ class Window(QWidget):
 
     def showDetails(self):
         if self.detailsState:
-            self.resize(380, 160)
+            self.setFixedSize(380, 160)
             self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 140))
             self.detials.setText("Details")
         else:
-            self.resize(380, 490)
+            self.setFixedSize(380, 490)
             self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 471))
             self.detials.setText("Details")
         self.detailsState = not self.detailsState
