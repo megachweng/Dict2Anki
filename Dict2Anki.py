@@ -101,7 +101,7 @@ class Window(QWidget):
         else:
             self.setFixedSize(380, 490)
             self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 471))
-            self.detials.setText("Details")
+            self.detials.setText("Hide")
         self.detailsState = not self.detailsState
 
     def initDB(self):
@@ -417,7 +417,7 @@ class Note(object):
         if existing:
             return existing
         m = mm.new("Dict2Anki")
-        m['css'] = """.card{font-family:arial;font-size:14px;text-align:left;color:#212121;background-color:white}.pronounce{line-height:30px;font-size:24px;margin-bottom:0;word-break:break-all}.phonetic{font-size:14px;margin-left:.2em;font-family:"lucida sans unicode",arial,sans-serif;color:#01848f}.term{vertical-align:bottom;margin-right:15px}.divider{margin:1em 0 1em 0;border-bottom:2px solid #4caf50}.phrase,.sentence{color:#01848f;padding-right:1em}tr{vertical-align:top}"""
+        m['css'] = """.card{font-family:arial;font-size:14px;text-align:left;color:#212121;background-color:white}.pronounce{line-height:30px;font-size:24px;margin-bottom:0}.phonetic{font-size:14px;font-family:"lucida sans unicode",arial,sans-serif;color:#01848f}.term{margin-bottom:-5px}.divider{margin:1em 0 1em 0;border-bottom:2px solid #4caf50}.phrase,.sentence{color:#01848f;padding-right:1em}tr{vertical-align:top}"""
 
         # add fields
         mm.addField(m, mm.newField("term"))
