@@ -33,6 +33,7 @@ class Window(QWidget):
         self.thread1 = None
         self.thread2 = None
         self.eudictDB = False
+        self.youdaoDB = None
         self.YoudaoDict = False
         self.detailsState = False
 
