@@ -157,7 +157,12 @@ class Window(QWidget):
         t = self.deckList.currentText()
         self.deckList.clear()
         alldecks = mw.col.decks.allNames()
-        alldecks.remove('Default')
+        try:
+            alldecks.remove('Default')
+        except:
+            alldecks.remove('默认')
+        finally:
+            pass
         for deckname in alldecks:
             self.deckList.addItem(deckname)
         if t:
