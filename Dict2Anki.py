@@ -186,9 +186,9 @@ class Window(QWidget):
             comparedTerms = self.compare(current, last)
             # stop the previous thread first
             if self.thread1 is not None:
-                    self.thread1.terminate()
+                self.thread1.terminate()
             if self.thread2 is not None:
-                    self.thread2.terminate()
+                self.thread2.terminate()
             # download the data!
             self.thread1 = lookUp(self, comparedTerms['new'])
             self.thread1.start()
@@ -558,12 +558,12 @@ class Note(object):
                         note['splaceHolder' + str(index)] = "Tap To View"
                 if term['image']:
                     if self.window.downloadimage.isChecked():
-                        note['image'] = "<img src = 'Deck2Anki/{}.jpg'>".format(term['image'])
+                        note['image'] = """<div><img src="MG-{}.jpg" /></div>""".format(term['image'])
                     else:
-                        note['image'] = "<img src ='{}' >".format(term['image'])
-
+                        note['image'] = "<img src ='{}' />".format(term['image'])
+                    mw.app.processEvents()
                 mw.col.addNote(note)
-            mw.col.fixIntegrity()
+
             mw.col.reset()
             mw.reset()
 
@@ -595,11 +595,9 @@ class imageDownloader(QThread):
     def run(self):
         self.window.debug.appendPlainText("Thread image downloading started")
         self.window.setWindowTitle("Downloading Images")
-        if not os.path.exists("Deck2Anki"):
-            os.makedirs("Deck2Anki")
         for imageUrl in self.imageUrls:
             self.window.debug.appendPlainText("Download image of " + imageUrl[1])
-            urllib.urlretrieve(imageUrl[0], "Deck2Anki/" + imageUrl[1])
+            urllib.urlretrieve(imageUrl[0], "MG-" + imageUrl[1])
             self.window.total.setValue(self.window.total.value() + 1)
         self.window.setWindowTitle("Dict2Anki")
 
@@ -611,6 +609,7 @@ def runYoudaoPlugin():
         __window = Window()
     except Exception, e:
         traceback.print_exc(file=open('error.log', 'w+'))
+
 
 # create menu item
 action = QAction("Import your WordBook", mw)
