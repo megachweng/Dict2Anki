@@ -19,7 +19,7 @@
      <x>10</x>
      <y>10</y>
      <width>360</width>
-     <height>471</height>
+     <height>470</height>
     </rect>
    </property>
    <property name="title">
@@ -29,9 +29,9 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>160</y>
-      <width>321</width>
-      <height>301</height>
+      <y>220</y>
+      <width>320</width>
+      <height>240</height>
      </rect>
     </property>
    </widget>
@@ -47,38 +47,6 @@
     <property name="orientation">
      <enum>Qt::Horizontal</enum>
     </property>
-   </widget>
-   <widget class="QComboBox" name="dictList">
-    <property name="geometry">
-     <rect>
-      <x>113</x>
-      <y>50</y>
-      <width>161</width>
-      <height>26</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true"/>
-    </property>
-    <property name="editable">
-     <bool>false</bool>
-    </property>
-    <property name="sizeAdjustPolicy">
-     <enum>QComboBox::AdjustToMinimumContentsLength</enum>
-    </property>
-    <property name="frame">
-     <bool>true</bool>
-    </property>
-    <item>
-     <property name="text">
-      <string>Youdao</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>EuDict</string>
-     </property>
-    </item>
    </widget>
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
@@ -116,8 +84,8 @@
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>21</x>
-      <y>90</y>
+      <x>20</x>
+      <y>150</y>
       <width>321</width>
       <height>46</height>
      </rect>
@@ -139,34 +107,111 @@
      </item>
     </layout>
    </widget>
-   <widget class="QCheckBox" name="downloadimage">
+   <widget class="Line" name="line_2">
     <property name="geometry">
      <rect>
-      <x>18</x>
-      <y>48</y>
-      <width>91</width>
-      <height>28</height>
+      <x>20</x>
+      <y>120</y>
+      <width>325</width>
+      <height>31</height>
      </rect>
     </property>
-    <property name="text">
-     <string>Save image</string>
-    </property>
-    <property name="checked">
-     <bool>true</bool>
+    <property name="orientation">
+     <enum>Qt::Horizontal</enum>
     </property>
    </widget>
-   <widget class="QPushButton" name="detials">
+   <widget class="QWidget" name="">
     <property name="geometry">
      <rect>
-      <x>280</x>
+      <x>20</x>
       <y>50</y>
-      <width>72</width>
+      <width>331</width>
       <height>32</height>
      </rect>
     </property>
-    <property name="text">
-     <string>Details</string>
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1,0">
+     <item>
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Dictonary</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="dictList">
+       <property name="styleSheet">
+        <string notr="true"/>
+       </property>
+       <property name="editable">
+        <bool>false</bool>
+       </property>
+       <property name="sizeAdjustPolicy">
+        <enum>QComboBox::AdjustToMinimumContentsLength</enum>
+       </property>
+       <property name="frame">
+        <bool>true</bool>
+       </property>
+       <item>
+        <property name="text">
+         <string>Youdao</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>EuDict</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="detials">
+       <property name="text">
+        <string>Details</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>100</y>
+      <width>321</width>
+      <height>27</height>
+     </rect>
     </property>
+    <layout class="QHBoxLayout" name="options">
+     <item>
+      <widget class="QCheckBox" name="downloadimage">
+       <property name="text">
+        <string>Save image</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="pronunciation">
+       <item>
+        <property name="text">
+         <string>Don't pronunce</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>British pronunciation</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>American pronunciation</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
  </widget>
