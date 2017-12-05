@@ -32,59 +32,90 @@ class Window(QWidget):
         self.initComponent()
         self.thread1 = None
         self.thread2 = None
+        self.thread3 = None
         self.eudictDB = False
         self.youdaoDB = None
         self.YoudaoDict = False
         self.detailsState = False
 
     def initComponent(self):
+
         self.setWindowTitle("Dict2Anki")
-        self.setFixedSize(380, 160)
+        self.setFixedSize(380, 220)
         self.groupBox = QGroupBox(self)
-        self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 140))
+        self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 200))
         self.groupBox.setTitle("")
         self.debug = QPlainTextEdit(self.groupBox)
-        self.debug.setGeometry(QtCore.QRect(20, 160, 321, 301))
+        self.debug.setGeometry(QtCore.QRect(20, 220, 320, 240))
         self.line = QFrame(self.groupBox)
         self.line.setGeometry(QtCore.QRect(20, 70, 325, 31))
         self.line.setFrameShape(QFrame.HLine)
         self.line.setFrameShadow(QFrame.Sunken)
-        self.dictList = QComboBox(self.groupBox)
-        self.dictList.setGeometry(QtCore.QRect(113, 50, 161, 26))
-        self.dictList.addItem("Youdao")
-        self.dictList.addItem("EuDict")
-        self.dictList.setCurrentIndex(0)
-        self.widget = QWidget(self.groupBox)
-        self.widget.setGeometry(QtCore.QRect(20, 10, 331, 34))
-        self.decksection = QHBoxLayout(self.widget)
+        self.layoutWidget = QWidget(self.groupBox)
+        self.layoutWidget.setGeometry(QtCore.QRect(20, 10, 331, 34))
+        self.decksection = QHBoxLayout(self.layoutWidget)
         self.decksection.setContentsMargins(0, 0, 0, 0)
-        self.label = QLabel(self.widget)
+        self.label = QLabel(self.layoutWidget)
         self.decksection.addWidget(self.label)
-        self.deckList = QComboBox(self.widget)
+        self.deckList = QComboBox(self.layoutWidget)
         self.deckList.setEditable(True)
         self.decksection.addWidget(self.deckList)
-        self.syncButton = QPushButton(self.widget)
+        self.syncButton = QPushButton(self.layoutWidget)
         self.decksection.addWidget(self.syncButton)
         self.decksection.setStretch(1, 1)
-        self.widget1 = QWidget(self.groupBox)
-        self.widget1.setGeometry(QtCore.QRect(21, 90, 321, 46))
-        self.progressSection = QVBoxLayout(self.widget1)
+        self.layoutWidget1 = QWidget(self.groupBox)
+        self.layoutWidget1.setGeometry(QtCore.QRect(20, 150, 321, 46))
+        self.progressSection = QVBoxLayout(self.layoutWidget1)
         self.progressSection.setContentsMargins(0, 0, 0, 0)
-        self.term = QProgressBar(self.widget1)
+        self.term = QProgressBar(self.layoutWidget1)
         self.term.setProperty("value", 0)
         self.progressSection.addWidget(self.term)
-        self.total = QProgressBar(self.widget1)
+        self.total = QProgressBar(self.layoutWidget1)
         self.total.setProperty("value", 0)
         self.progressSection.addWidget(self.total)
-        self.downloadimage = QCheckBox(self.groupBox)
-        self.downloadimage.setGeometry(QtCore.QRect(18, 48, 91, 28))
+        self.line_2 = QFrame(self.groupBox)
+        self.line_2.setGeometry(QtCore.QRect(20, 120, 325, 31))
+        self.line_2.setFrameShape(QFrame.HLine)
+        self.line_2.setFrameShadow(QFrame.Sunken)
+        self.widget = QWidget(self.groupBox)
+        self.widget.setGeometry(QtCore.QRect(20, 50, 331, 32))
+        self.horizontalLayout = QHBoxLayout(self.widget)
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.label_2 = QLabel(self.widget)
+        self.horizontalLayout.addWidget(self.label_2)
+        self.dictList = QComboBox(self.widget)
+        self.dictList.setStyleSheet("")
+        self.dictList.setEditable(False)
+        self.dictList.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
+        self.dictList.setFrame(True)
+        self.dictList.addItem("")
+        self.dictList.addItem("")
+        self.horizontalLayout.addWidget(self.dictList)
+        self.detials = QPushButton(self.widget)
+        self.horizontalLayout.addWidget(self.detials)
+        self.horizontalLayout.setStretch(1, 1)
+        self.widget1 = QWidget(self.groupBox)
+        self.widget1.setGeometry(QtCore.QRect(20, 100, 321, 27))
+        self.options = QHBoxLayout(self.widget1)
+        self.options.setContentsMargins(0, 0, 0, 0)
+        self.downloadimage = QCheckBox(self.widget1)
         self.downloadimage.setChecked(True)
-        self.detials = QPushButton(self.groupBox)
-        self.detials.setGeometry(QtCore.QRect(280, 50, 72, 32))
+        self.options.addWidget(self.downloadimage)
+        self.pronunciation = QComboBox(self.widget1)
+        self.pronunciation.addItem("")
+        self.pronunciation.addItem("")
+        self.pronunciation.addItem("")
+        self.options.addWidget(self.pronunciation)
         self.label.setText("Sync to")
         self.syncButton.setText("Sync")
-        self.downloadimage.setText("Save image")
+        self.label_2.setText("Dictonary")
+        self.dictList.setItemText(0, "Youdao")
+        self.dictList.setItemText(1, "EuDict")
         self.detials.setText("Details")
+        self.downloadimage.setText("Save image")
+        self.pronunciation.setItemText(0, "Don't pronounce")
+        self.pronunciation.setItemText(1, "British pronunciation")
+        self.pronunciation.setItemText(2, "American pronunciation")
 
         self.syncButton.clicked.connect(self.sync)
         self.detials.clicked.connect(self.showDetails)
@@ -96,20 +127,20 @@ class Window(QWidget):
 
     def showDetails(self):
         if self.detailsState:
-            self.setFixedSize(380, 160)
-            self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 140))
+            self.setFixedSize(380, 220)
+            self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 200))
             self.detials.setText("Details")
         else:
             self.setFixedSize(380, 490)
-            self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 471))
+            self.groupBox.setGeometry(QtCore.QRect(10, 10, 360, 470))
             self.detials.setText("Hide")
         self.detailsState = not self.detailsState
 
     def initDB(self):
         conn = sqlite3.connect('Dict2Anki.db')
         cursor = conn.cursor()
-        cursor.execute('create table if not exists history (id INTEGER primary key, terms TEXT,time TEXT,deckname TEXT, dictname TEXT)')
-        cursor.execute('create table if not exists settings (id INTEGER primary key,deckname TEXT, downloadimage INTEGER, dictname TEXT)')
+        cursor.execute('create table if not exists history (id INTEGER primary key, terms TEXT,time TEXT,deckname TEXT, dictname INTEGER)')
+        cursor.execute('create table if not exists settings (id INTEGER primary key,deckname TEXT, downloadimage INTEGER, dictname INTEGER, pronunciation INTEGER)')
         cursor.close()
         conn.commit()
         conn.close()
@@ -126,15 +157,13 @@ class Window(QWidget):
             deckname = values[0][1]
             downloadimage = ((values[0][2] == 1) and True or False)
             dictname = values[0][3]
+            pronunciation = values[0][4]
             if deckname:
                 self.deckList.setEditText(deckname)
             self.downloadimage.setChecked(downloadimage)
-            if dictname == "Youdao":
-                self.dictList.setCurrentIndex(0)
-            elif dictname == "EuDict":
-                self.dictList.setCurrentIndex(1)
-            else:
-                self.dictList.setCurrentIndex(-1)
+            self.dictList.setCurrentIndex(dictname)
+            self.pronunciation.setCurrentIndex(pronunciation)
+
 
             # self.debug.appendPlainText(str(self.dictList.findData(dictname)))
             self.debug.appendPlainText(str(dictname))
@@ -143,13 +172,14 @@ class Window(QWidget):
         self.debug.appendPlainText('SaveSettings')
         deckname = self.deckList.currentText()
         downloadimage = self.downloadimage.isChecked() and 1 or 0
-        dictname = self.dictList.currentText()
+        dictname = self.dictList.currentIndex()
+        pronunciation = self.pronunciation.currentIndex()
         self.debug.appendPlainText('Settings:{} {} {}'.format(deckname, downloadimage, dictname))
 
         conn = sqlite3.connect('Dict2Anki.db')
         cursor = conn.cursor()
-        cursor.execute('INSERT OR IGNORE INTO settings (id,deckname,downloadimage,dictname) VALUES(?,?,?,?)', (1, deckname, downloadimage, dictname))
-        cursor.execute('UPDATE settings SET deckname=?,downloadimage=?,dictname=?  WHERE id=1', (deckname, downloadimage, dictname))
+        cursor.execute('INSERT OR IGNORE INTO settings (id,deckname,downloadimage,dictname,pronunciation) VALUES(?,?,?,?,?)', (1, deckname, downloadimage, dictname, pronunciation))
+        cursor.execute('UPDATE settings SET deckname=?,downloadimage=?,dictname=?,pronunciation=?  WHERE id=1', (deckname, downloadimage, dictname, pronunciation))
         cursor.rowcount
         conn.commit()
         conn.close()
@@ -189,6 +219,8 @@ class Window(QWidget):
                 self.thread1.terminate()
             if self.thread2 is not None:
                 self.thread2.terminate()
+            if self.thread3 is not None:
+                self.thread3.terminate()
             # download the data!
             self.thread1 = lookUp(self, comparedTerms['new'])
             self.thread1.start()
@@ -203,6 +235,13 @@ class Window(QWidget):
                 self.thread2.start()
                 while not self.thread2.isFinished():
                     mw.app.processEvents()
+
+            if not self.pronunciation.currentIndex() == 0:
+                self.thread3 = soundDownloader(self, self.thread1.results['lookUpedTerms'],self.pronunciation.currentIndex())
+                self.thread3.start()
+                while not self.thread3.isFinished():
+                    mw.app.processEvents()
+
             self.saveCurrent(current)
             self.saveSettings()
             self.syncButton.setEnabled(True)
@@ -542,7 +581,7 @@ class Note(object):
         if self.new:
             for term in self.new:
                 note = mw.col.newNote()
-                note['term'] = term['term']
+                note['term'] = term['term']+"[sound:MG-"+term['term']+".mp3]"
                 note['definition'] = term['definition']
                 note['uk'] = term['uk']
                 note['us'] = term['us']
@@ -601,6 +640,29 @@ class imageDownloader(QThread):
             self.window.total.setValue(self.window.total.value() + 1)
         self.window.setWindowTitle("Dict2Anki")
 
+class soundDownloader(QThread):
+    def __init__(self,window,terms,type):
+        super(soundDownloader, self).__init__()
+        self.window = window
+        self.terms = terms
+        self.type = type
+        self.window.total.setValue(0)
+        self.window.total.setMaximum(len(self.terms))
+        # 1 UK 2 US
+        self.soundAPI = "http://dict.youdao.com/dictvoice?audio={}&type={}"
+        
+    def run(self):
+        self.window.debug.appendPlainText("Thread sound downloading started")
+        self.window.setWindowTitle("Downloading sound")
+        for term in self.terms:
+            try:
+                self.window.debug.appendPlainText("Download sound of " + term['term'])
+                urllib.urlretrieve(self.soundAPI.format(term['term'],str(self.type)), "MG-" + term['term'] + '.mp3')
+                self.window.total.setValue(self.window.total.value() + 1)
+            except:
+                pass
+            
+        self.window.setWindowTitle("Dict2Anki")
 
 def runYoudaoPlugin():
     try:
