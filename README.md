@@ -21,8 +21,8 @@
   <span><img src = "https://raw.githubusercontent.com/megachweng/Dict2Anki/master/screenshots/card-back.png" width=400></span>
 ## 如何安装 How to Install
 - ### 从源码安装（推荐）Install from source(highly suggest)
-    - 在[Release](https://github.com/megachweng/Dict2Anki/releases/tag/v1.0)中下载最新版本  
-    Download lastest version from [Release](https://github.com/megachweng/Dict2Anki/releases/tag/v1.0)
+    - 在[Release](https://github.com/megachweng/Dict2Anki/releases/tag/v2.0)中下载最新版本  
+    Download lastest version from [Release](https://github.com/megachweng/Dict2Anki/releases/tag/v2.0)
 
     - 解压`Zip`  
     Unzip
