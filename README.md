@@ -1,3 +1,5 @@
+**欧路词典在12.0.5版本开始加密了本地数据库，导致本插件无法正确读取生词本，请用户下载欧路词典老版本使用**
+**针对新版本的插件正在更新中，尽请期待**
 # Dict2Anki
 ##### **只支持 Anki 2.0.x.** **Only supports Anki 2.0.x.**  
 **Dict2Anki** 是一款方便[有道词典](http://cidian.youdao.com/multi.html)、[欧陆词典](https://www.eudic.net/)用户同步生成本地单词本卡片至[Anki](https://apps.ankiweb.net/#download)的插件  
