@@ -144,7 +144,7 @@ class Note(object):
 
                 if term['image']:
                     if self.syncSettings['saveImage']:
-                        note['image'] = """<div><img src="MG-{}.jpg" /></div>""".format(term['image'])
+                        note['image'] = """<div><img src="MG-{}.jpg" /></div>""".format(term['term'])
                     else:
                         note['image'] = "<img src ='{}' />".format(term['image'])
                     mw.app.processEvents()

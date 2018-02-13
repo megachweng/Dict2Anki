@@ -96,7 +96,7 @@ class LookupThread(QtCore.QThread):
                 }
                 self.lookUpedTerms.append(lookUpedTerm)
                 self.emit(QtCore.SIGNAL('updateProgressBar'), current+1, tw)
-                self.emit(QtCore.SIGNAL('seek'),self.wordList[current])
+                self.emit(QtCore.SIGNAL('seek'),'Looking up:' + self.wordList[current])
             self.emit(QtCore.SIGNAL('done'), self.lookUpedTerms)
             # return json.dumps(self.lookUpedTerms)
         else:

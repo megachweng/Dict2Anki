@@ -157,31 +157,40 @@ class parseYoudaoWordbook(HTMLParser):
                 if attribute == 'class' and value == 'word':
                     self.terms.append(attrs[1][1])
 
-# class imageDownloader(QtCore.QThread):
-#     """thread that download images of terms"""
-#
-#     def __init__(self, imageUrls):
-#         QtCore.QThread.__init__(self)
-#         self.imageUrls = imageUrls
-#
-#     def run(self):
-#         for imageUrl in self.imageUrls:
-#             urllib.urlretrieve(imageUrl[0], "MG-" + imageUrl[1])
-#
-# class soundDownloader(QtCore.QThread):
-#     def __init__(self,terms,type):
-#         QtCore.QThread.__init__(self)
-#         self.terms = terms
-#         self.type = type
-#         # 1 UK 2 US
-#         self.soundAPI = "http://dict.youdao.com/dictvoice?audio={}&type={}"
-#
-#     def run(self):
-#         for term in self.terms:
-#             try:
-#                 urllib.urlretrieve(self.soundAPI.format(term['term'],str(self.type)), "MG-" + term['term'] + '.mp3')
-#             except:
-#                 pass
+
+class imageDownloader(QtCore.QThread):
+    """thread that download images of terms"""
+    def __init__(self,imageUrls):
+        QtCore.QThread.__init__(self)
+        self.imageUrls = imageUrls
+
+    def run(self):
+        ti = len(self.imageUrls)
+        for current in range(ti):
+            urllib.urlretrieve(self.imageUrls[current][1], "MG-" + self.imageUrls[current][0] + '.jpg')
+            self.emit(QtCore.SIGNAL('updateProgressBar'), current+1, ti)
+            self.emit(QtCore.SIGNAL('seek'),'Getting image: ' + self.imageUrls[current][0])
+
+
+class pronunciationDownloader(QtCore.QThread):
+    def __init__(self,terms,ptype):
+        QtCore.QThread.__init__(self)
+        self.terms = terms
+        self.ptype = ptype
+        # 1 UK 2 US
+        self.soundAPI = "http://dict.youdao.com/dictvoice?audio={}&type={}"
+
+    def run(self):
+        tp = len(self.terms)
+        for current in range(tp):
+            try:
+                urllib.urlretrieve(self.soundAPI.format(self.terms[current],str(self.ptype)), "MG-" + self.terms[current] + '.mp3')
+                self.emit(QtCore.SIGNAL('updateProgressBar'), current+1, tp)
+                self.emit(QtCore.SIGNAL('seek'),'Getting pronunciation: ' + self.terms[current])
+            except Exception,e:
+                self.emit(QtCore.SIGNAL('seek'),str(e))
+
+
 
 # test = Youdao()
 # test.run()

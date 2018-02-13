@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import time
+import ssl
 import sqlite3
 import hashlib
 import cookielib
@@ -14,10 +15,11 @@ from aqt.utils import showInfo, askUser, tooltip
 
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtGui import QWidget
-from worker import Eudict, Youdao
+from worker import Eudict, Youdao, imageDownloader, pronunciationDownloader
 from API import LookupThread
 from note import Note
 
+ssl._create_default_https_context = ssl._create_unverified_context
 
 class Window(QWidget):
     def __init__(self, parent=None):
@@ -27,6 +29,8 @@ class Window(QWidget):
         self.__updateUI()
         self.dictThread = None
         self.LookupThread = None
+        self.imageDownloadThread = None
+        self.pronunciationDownloadThread = None
         self.show()
 
     def seek(self,something):
@@ -310,11 +314,46 @@ class Window(QWidget):
             self.LookupThread.terminate()
         self.LookupThread = LookupThread(data['new'])
         self.connect(self.LookupThread,QtCore.SIGNAL('seek'),self.seek)
-        self.connect(self.LookupThread,QtCore.SIGNAL('done'),self.__processNote)
+        self.connect(self.LookupThread,QtCore.SIGNAL('done'),self.__getAssets)
         self.connect(self.LookupThread,QtCore.SIGNAL('updateProgressBar'),self.updateProgressBar)
         self.LookupThread.start()
         self.seek('LookupThread started')
         # self.__saveWordList(currentWordList)
+
+    def __getAssets(self,lookUpedTerms):
+        imageUrls = [[term['term'],term['image']] for term in lookUpedTerms if term['image']]
+        self.seek(json.dumps(imageUrls))
+
+
+        if self.imageDownloadThread:
+            self.imageDownloadThread.terminate()
+        if self.pronunciationDownloadThread:
+            self.pronunciationDownloadThread.terminate()
+
+        if self.saveImage.isChecked():
+            self.imageDownloadThread = imageDownloader(imageUrls)
+            self.connect(self.imageDownloadThread,QtCore.SIGNAL('updateProgressBar'),self.updateProgressBar)
+            self.connect(self.imageDownloadThread,QtCore.SIGNAL('seek'),self.seek)
+            self.imageDownloadThread.start()
+
+        if self.saveImage.isChecked():
+            while not self.imageDownloadThread.isFinished():
+                mw.app.processEvents()
+                self.imageDownloadThread.wait(1)
+
+        if self.pronunciation.currentIndex():
+            self.pronunciationDownloadThread = pronunciationDownloader(self.data['new'],self.pronunciation.currentIndex())
+            self.connect(self.pronunciationDownloadThread,QtCore.SIGNAL('updateProgressBar'),self.updateProgressBar)
+            self.connect(self.pronunciationDownloadThread,QtCore.SIGNAL('seek'),self.seek)
+            self.pronunciationDownloadThread.start()
+
+        if self.pronunciation.currentIndex():
+            while not self.pronunciationDownloadThread.isFinished():
+                mw.app.processEvents()
+                self.pronunciationDownloadThread.wait(1)
+
+        self.__processNote(lookUpedTerms)
+
 
     def __processNote(self,lookUpedTerms):
         new = lookUpedTerms
@@ -327,7 +366,7 @@ class Window(QWidget):
 
 
     def __startSync(self):
-            self.__getCurrentWordList()
+        self.__getCurrentWordList()
 
     def __getCurrentWordList(self):
 
