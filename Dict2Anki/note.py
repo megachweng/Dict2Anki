@@ -41,6 +41,7 @@ class Note(object):
         mm.addField(m, mm.newField("splaceHolder1"))
         mm.addField(m, mm.newField("splaceHolder2"))
         mm.addField(m, mm.newField("image"))
+        mm.addField(m, mm.newField("pronunciation"))
 
         # add cards
         t = mm.newTemplate("Normal")
@@ -49,6 +50,7 @@ class Note(object):
             <tr>
             <td>
             <h1 class="term">{{term}}</h1>
+                <span>{{pronunciation}}</span>
                 <div class="pronounce">
                     <span class="phonetic">UK[{{uk}}]</span>
                     <span class="phonetic">US[{{us}}]</span>
@@ -77,6 +79,7 @@ class Note(object):
             <tr>
             <td>
             <h1 class="term">{{term}}</h1>
+                <span>{{pronunciation}}</span>
                 <div class="pronounce">
                     <span class="phonetic">UK[{{uk}}]</span>
                     <span class="phonetic">US[{{us}}]</span>
@@ -125,18 +128,22 @@ class Note(object):
         if self.new:
             for term in self.new:
                 note = mw.col.newNote()
-                note['term'] = term['term']+"[sound:MG-"+term['term']+".mp3]"
-                note['definition'] = term['definition']
-                note['uk'] = term['uk']
-                note['us'] = term['us']
-
-                if term['phrases'][0]:
+                note['term'] = term['term']
+                if term['definition']:
+                    note['definition'] = term['definition']
+                if term['uk']:
+                    note['uk'] = term['uk']
+                if term['us']:
+                    note['us'] = term['us']
+                if self.syncSettings['pronunciation']:
+                    note['pronunciation'] = "[sound:MG-"+term['term']+".mp3]"
+                if term['phrases']:
                     for index, phrase in enumerate(term['phrases']):
                         note['phrase' + str(index)] = phrase
                         note['phrase_explain' + str(index)] = term['phrases_explains'][index]
                         note['pplaceHolder' + str(index)] = "Tap To View"
 
-                if term['sentences'][0]:
+                if term['sentences']:
                     for index, sentence in enumerate(term['sentences']):
                         note['sentence' + str(index)] = sentence
                         note['sentence_explain' + str(index)] = term['sentences_explains'][index]
@@ -153,9 +160,10 @@ class Note(object):
             mw.reset()
 
         # start deleting notes
+
         if self.deleted:
             for term in self.deleted:
-                cardID = mw.col.findCards("term:" + term)
+                cardID = mw.col.findCards("term:" + term )
                 deckID = mw.col.decks.id(deckName)
                 for cid in cardID:
                     nid = mw.col.db.scalar("select nid from cards where id = ? and did = ?", cid, deckID)
@@ -165,5 +173,4 @@ class Note(object):
             mw.col.fixIntegrity()
             mw.col.reset()
             mw.reset()
-
         tooltip('Added : ' + str(len(self.new)) + '<br><br>Deleted : ' + str(len(self.deleted)), period=3000)

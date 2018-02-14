@@ -15,9 +15,8 @@ from aqt.utils import showInfo, askUser, tooltip
 
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtGui import QWidget
-from worker import Eudict, Youdao, imageDownloader, pronunciationDownloader
-from API import LookupThread
-from note import Note
+from Dict2Anki.worker import Eudict, Youdao, imageDownloader, pronunciationDownloader,Lookupper
+from Dict2Anki.note import Note
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -35,6 +34,9 @@ class Window(QWidget):
 
     def seek(self,something):
         self.debug.appendPlainText(something)
+    def updateProgressBar(self,current,total):
+        self.progressBar.setMaximum(total)
+        self.progressBar.setValue(current)
 
     def __setDefaultUI(self):
         self.resize(583, 381)
@@ -142,31 +144,31 @@ class Window(QWidget):
         self.gridLayout_2.addWidget(self.youdaoRemember, 1, 2, 1, 1)
         self.gridLayout_2.addWidget(self.youdaoLoginButton, 0, 2, 1, 1)
 
-        # History Tab
-        self.historyTab = QtGui.QWidget()
-        self.historyList = QtGui.QTableWidget(self.historyTab)
-        self.historyList.setGeometry(QtCore.QRect(10, 10, 411, 301))
-        self.historyList.setCornerButtonEnabled(False)
-        self.historyList.setColumnCount(3)
-        self.historyList.setRowCount(0)
-        self.historyList.setHorizontalHeaderItem(0, QtGui.QTableWidgetItem())
-        self.historyList.setHorizontalHeaderItem(1, QtGui.QTableWidgetItem())
-        self.historyList.setHorizontalHeaderItem(2, QtGui.QTableWidgetItem())
-        self.historyList.horizontalHeader().setVisible(True)
-        self.historyList.horizontalHeader().setDefaultSectionSize(136)
-        self.historyList.horizontalHeader().setHighlightSections(True)
-        self.historyList.verticalHeader().setVisible(False)
-        self.historyList.horizontalHeaderItem(0).setText("Sync Date")
-        self.historyList.horizontalHeaderItem(1).setText("Dictionary")
-        self.historyList.horizontalHeaderItem(2).setText("Deck")
-        self.restoreButton = QtGui.QPushButton(self.historyTab)
-        self.restoreButton.setText("Restore")
-        self.restoreButton.setGeometry(QtCore.QRect(424, 10, 110, 32))
-        self.deleteButton = QtGui.QPushButton(self.historyTab)
-        self.deleteButton.setGeometry(QtCore.QRect(424, 50, 110, 32))
-        self.deleteButton.setText("Delete")
-        self.container.addTab(self.historyTab, "History")
-        self.container.setCurrentIndex(self.container.indexOf(self.accountTab))
+        # # History Tab
+        # self.historyTab = QtGui.QWidget()
+        # self.historyList = QtGui.QTableWidget(self.historyTab)
+        # self.historyList.setGeometry(QtCore.QRect(10, 10, 411, 301))
+        # self.historyList.setCornerButtonEnabled(False)
+        # self.historyList.setColumnCount(3)
+        # self.historyList.setRowCount(0)
+        # self.historyList.setHorizontalHeaderItem(0, QtGui.QTableWidgetItem())
+        # self.historyList.setHorizontalHeaderItem(1, QtGui.QTableWidgetItem())
+        # self.historyList.setHorizontalHeaderItem(2, QtGui.QTableWidgetItem())
+        # self.historyList.horizontalHeader().setVisible(True)
+        # self.historyList.horizontalHeader().setDefaultSectionSize(136)
+        # self.historyList.horizontalHeader().setHighlightSections(True)
+        # self.historyList.verticalHeader().setVisible(False)
+        # self.historyList.horizontalHeaderItem(0).setText("Sync Date")
+        # self.historyList.horizontalHeaderItem(1).setText("Dictionary")
+        # self.historyList.horizontalHeaderItem(2).setText("Deck")
+        # self.restoreButton = QtGui.QPushButton(self.historyTab)
+        # self.restoreButton.setText("Restore")
+        # self.restoreButton.setGeometry(QtCore.QRect(424, 10, 110, 32))
+        # self.deleteButton = QtGui.QPushButton(self.historyTab)
+        # self.deleteButton.setGeometry(QtCore.QRect(424, 50, 110, 32))
+        # self.deleteButton.setText("Delete")
+        # self.container.addTab(self.historyTab, "History")
+        # self.container.setCurrentIndex(self.container.indexOf(self.accountTab))
 
     def __initDB(self):
         conn = sqlite3.connect('Dict2Anki.db')
@@ -284,92 +286,23 @@ class Window(QWidget):
         conn.commit()
         conn.close()
 
-    def updateProgressBar(self,current,total):
-        self.progressBar.setMaximum(total)
-        self.progressBar.setValue(current)
-
-    def compareAndLookUp(self,currentWordList):
-        lastWordList = self.__getLastWordList()
-        data = {"deleted": [], "new": []}
-        if lastWordList:
-            self.seek("Last record exist & Do comparasion")
-            for term in lastWordList:
-                if term not in currentWordList:
-                    data['deleted'].append(term)
-            for term in currentWordList:
-                if term not in lastWordList:
-                    data['new'].append(term)
-        else:
-            self.seek("No record & First sync")
-            data["new"] = currentWordList
-            data['deleted'] = []
-
-        self.data = data # for later usage
-
-        self.seek("compare results:" + json.dumps(data))
-        self.dictThread = None
-
-        # start lookup
-        if self.LookupThread:
-            self.LookupThread.terminate()
-        self.LookupThread = LookupThread(data['new'])
-        self.connect(self.LookupThread,QtCore.SIGNAL('seek'),self.seek)
-        self.connect(self.LookupThread,QtCore.SIGNAL('done'),self.__getAssets)
-        self.connect(self.LookupThread,QtCore.SIGNAL('updateProgressBar'),self.updateProgressBar)
-        self.LookupThread.start()
-        self.seek('LookupThread started')
-        # self.__saveWordList(currentWordList)
-
-    def __getAssets(self,lookUpedTerms):
-        imageUrls = [[term['term'],term['image']] for term in lookUpedTerms if term['image']]
-        self.seek(json.dumps(imageUrls))
-
-
-        if self.imageDownloadThread:
-            self.imageDownloadThread.terminate()
-        if self.pronunciationDownloadThread:
-            self.pronunciationDownloadThread.terminate()
-
-        if self.saveImage.isChecked():
-            self.imageDownloadThread = imageDownloader(imageUrls)
-            self.connect(self.imageDownloadThread,QtCore.SIGNAL('updateProgressBar'),self.updateProgressBar)
-            self.connect(self.imageDownloadThread,QtCore.SIGNAL('seek'),self.seek)
-            self.imageDownloadThread.start()
-
-        if self.saveImage.isChecked():
-            while not self.imageDownloadThread.isFinished():
-                mw.app.processEvents()
-                self.imageDownloadThread.wait(1)
-
-        if self.pronunciation.currentIndex():
-            self.pronunciationDownloadThread = pronunciationDownloader(self.data['new'],self.pronunciation.currentIndex())
-            self.connect(self.pronunciationDownloadThread,QtCore.SIGNAL('updateProgressBar'),self.updateProgressBar)
-            self.connect(self.pronunciationDownloadThread,QtCore.SIGNAL('seek'),self.seek)
-            self.pronunciationDownloadThread.start()
-
-        if self.pronunciation.currentIndex():
-            while not self.pronunciationDownloadThread.isFinished():
-                mw.app.processEvents()
-                self.pronunciationDownloadThread.wait(1)
-
-        self.__processNote(lookUpedTerms)
-
-
-    def __processNote(self,lookUpedTerms):
-        new = lookUpedTerms
-        deleted = self.data['deleted']
-        syncSettings = {'saveImage':self.saveImage.isChecked(),'pronunciation':self.pronunciation.currentIndex()}
-        self.seek('lookup results: ' + json.dumps(new,indent=4))
-        # self.seek(str(deleted))
-        Note(new,deleted,syncSettings).processNote(self.syncTo.currentText())
-
-
-
     def __startSync(self):
-        self.__getCurrentWordList()
+        #getLastWordList-> getCurrentWordList =-> compare -> lookup =-> getimage =-> getpronounce =-> processNote -> saveCurrentWordlist
+        if askUser('Sync Now?'):
+            self.syncButton.setText('Wait...')
+            self.syncButton.setEnabled(False)
+            self.lastWordList = self.__getLastWordList()
+            self.currentWordList = self.__getCurrentWordList()
+            self.comparedWordList = self.__compare(self.lastWordList,self.currentWordList)
+            self.lookUpedTerms = self.__lookup(self.comparedWordList['new'])
+            self.__getAssets(self.lookUpedTerms)
+            self.__processNote(self.lookUpedTerms,self.comparedWordList['deleted'])
+            self.__saveWordList(self.currentWordList)
+            self.__saveSyncSettings()
+            self.syncButton.setText('Sync')
+            self.syncButton.setEnabled(True)
 
     def __getCurrentWordList(self):
-
         if self.dictThread:
             self.dictThread.terminate()
 
@@ -378,10 +311,17 @@ class Window(QWidget):
         else:
             self.dictThread = Eudict()
 
-        self.connect(self.dictThread,QtCore.SIGNAL('seek'),self.seek)
-        self.connect(self.dictThread,QtCore.SIGNAL('updateProgressBar'),self.updateProgressBar)
-        self.connect(self.dictThread,QtCore.SIGNAL('done'),self.compareAndLookUp) # compare current and last when thread done
+
+        self.connect(self.dictThread,QtCore.SIGNAL('updateProgressBar_dict(int,int)'),self.updateProgressBar)
+
         self.dictThread.start()
+
+        while not self.dictThread.isFinished():
+            mw.app.processEvents()
+            self.dictThread.wait(1)
+        results = self.dictThread.results
+        self.dictThread = None
+        return results
 
     def __getLastWordList(self):
         deck = self.syncTo.currentText()
@@ -397,7 +337,75 @@ class Window(QWidget):
             self.seek("last wordList:" + json.dumps(terms))
             return terms
         else:
-            return False
+            return None
+
+    def __compare(self,lastWordList,currentWordList):
+        comparedWordList = {"deleted": [], "new": []}
+        if lastWordList:
+            self.seek("Last record exist & Do comparasion")
+            for term in lastWordList:
+                if term not in currentWordList:
+                    comparedWordList['deleted'].append(term)
+            for term in currentWordList:
+                if term not in lastWordList:
+                    comparedWordList['new'].append(term)
+        else:
+            self.seek("No record & First sync")
+            comparedWordList["new"] = currentWordList
+            comparedWordList['deleted'] = []
+
+        self.seek("compare results:" + json.dumps(comparedWordList))
+        return comparedWordList
+
+    def __lookup(self,newWords):
+        if self.LookupThread:
+            self.LookupThread.terminate()
+        self.LookupThread = Lookupper(newWords)
+        self.connect(self.LookupThread,QtCore.SIGNAL('seek_lookup(QString)'),self.seek)
+        self.connect(self.LookupThread,QtCore.SIGNAL('updateProgressBar_lookup(int,int)'),self.updateProgressBar)
+        self.LookupThread.start()
+
+        while not self.LookupThread.isFinished():
+            mw.app.processEvents()
+            self.LookupThread.wait(1)
+        results = self.LookupThread.lookUpedTerms
+        self.LookupThread = None
+        return results
+
+    def __getAssets(self,lookUpedTerms):
+        if lookUpedTerms:
+            imageUrls = [[term['term'],term['image']] for term in lookUpedTerms if term['image']]
+
+            if self.imageDownloadThread:
+                self.imageDownloadThread.terminate()
+            if self.pronunciationDownloadThread:
+                self.pronunciationDownloadThread.terminate()
+
+            if self.saveImage.isChecked():
+                self.imageDownloadThread = imageDownloader(imageUrls)
+                self.connect(self.imageDownloadThread,QtCore.SIGNAL('seek_img(QString)'),self.seek)
+                self.connect(self.imageDownloadThread,QtCore.SIGNAL('updateProgressBar_img(int,int)'),self.updateProgressBar)
+                self.imageDownloadThread.start()
+                while not self.imageDownloadThread.isFinished():
+                    mw.app.processEvents()
+                    self.imageDownloadThread.wait(1)
+
+
+            if self.pronunciation.currentIndex():
+                self.pronunciationDownloadThread = pronunciationDownloader([t['term'] for t in lookUpedTerms],self.pronunciation.currentIndex())
+                self.connect(self.pronunciationDownloadThread,QtCore.SIGNAL('seek_pron(QString)'),self.seek)
+                self.connect(self.pronunciationDownloadThread,QtCore.SIGNAL('updateProgressBar_pron(int,int)'),self.updateProgressBar)
+                self.pronunciationDownloadThread.start()
+                while not self.pronunciationDownloadThread.isFinished():
+                    mw.app.processEvents()
+                    self.pronunciationDownloadThread.wait(1)
+
+        else:
+            self.seek('No assets need to be downloaded')
+
+    def __processNote(self,lookUpedTerms,deleteWords):
+        syncSettings = {'saveImage':self.saveImage.isChecked(),'pronunciation':self.pronunciation.currentIndex()}
+        Note(lookUpedTerms,deleteWords,syncSettings).processNote(self.syncTo.currentText())
 
     def __saveWordList(self, wordList):
         dictionary = self.dictionary.currentIndex()

@@ -8,7 +8,7 @@ from aqt.qt import *
 from aqt.utils import showInfo, askUser, tooltip
 
 # Mywindow
-from window import Window
+from Dict2Anki.window import Window
 
 
 def runPlugin():
