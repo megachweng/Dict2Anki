@@ -36,9 +36,9 @@
      <property name="geometry">
       <rect>
        <x>410</x>
-       <y>18</y>
-       <width>111</width>
-       <height>111</height>
+       <y>28</y>
+       <width>107</width>
+       <height>91</height>
       </rect>
      </property>
      <property name="text">
@@ -296,86 +296,6 @@ p, li { white-space: pre-wrap; }
        </item>
       </layout>
      </widget>
-    </widget>
-   </widget>
-   <widget class="QWidget" name="historyTab">
-    <attribute name="title">
-     <string>History</string>
-    </attribute>
-    <widget class="QTableWidget" name="historyList">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>10</y>
-       <width>411</width>
-       <height>301</height>
-      </rect>
-     </property>
-     <property name="cornerButtonEnabled">
-      <bool>false</bool>
-     </property>
-     <attribute name="horizontalHeaderVisible">
-      <bool>false</bool>
-     </attribute>
-     <attribute name="horizontalHeaderCascadingSectionResizes">
-      <bool>false</bool>
-     </attribute>
-     <attribute name="horizontalHeaderDefaultSectionSize">
-      <number>136</number>
-     </attribute>
-     <attribute name="horizontalHeaderHighlightSections">
-      <bool>true</bool>
-     </attribute>
-     <attribute name="horizontalHeaderMinimumSectionSize">
-      <number>4</number>
-     </attribute>
-     <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
-      <bool>false</bool>
-     </attribute>
-     <attribute name="verticalHeaderVisible">
-      <bool>false</bool>
-     </attribute>
-     <column>
-      <property name="text">
-       <string>Sync Date</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Dictionary</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Deck</string>
-      </property>
-     </column>
-    </widget>
-    <widget class="QPushButton" name="restoreButton">
-     <property name="geometry">
-      <rect>
-       <x>424</x>
-       <y>10</y>
-       <width>110</width>
-       <height>32</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Restore</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="deleteButton">
-     <property name="geometry">
-      <rect>
-       <x>424</x>
-       <y>50</y>
-       <width>110</width>
-       <height>32</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Delete</string>
-     </property>
     </widget>
    </widget>
   </widget>

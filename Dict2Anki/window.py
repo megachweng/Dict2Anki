@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import json
 import time
 import ssl
@@ -39,7 +40,7 @@ class Window(QWidget):
         self.progressBar.setValue(current)
 
     def __setDefaultUI(self):
-        self.resize(583, 381)
+        self.setFixedSize(583, 381)
         self.setWindowTitle("Dict2Anki 3.0")
         self.container = QtGui.QTabWidget(self)
         self.container.setGeometry(QtCore.QRect(20, 10, 541, 351))
@@ -48,10 +49,11 @@ class Window(QWidget):
         self.syncTab = QtGui.QWidget()
         self.syncButton = QtGui.QPushButton(self.syncTab)
         self.syncButton.setText("Sync")
-        self.syncButton.setGeometry(QtCore.QRect(410, 18, 111, 114))
+        self.syncButton.setGeometry(QtCore.QRect(410, 28, 107, 91))
         self.syncButton.clicked.connect(self.__startSync)
         self.progressBar = QtGui.QProgressBar(self.syncTab)
         self.progressBar.setGeometry(QtCore.QRect(20, 150, 491, 31))
+        self.progressBar.setTextVisible(False)
         self.line = QtGui.QFrame(self.syncTab)
         self.line.setGeometry(QtCore.QRect(20, 130, 491, 31))
         self.line.setFrameShape(QtGui.QFrame.HLine)
@@ -230,12 +232,13 @@ class Window(QWidget):
                 self.saveImage.setChecked(saveimage)
                 self.pronunciation.setCurrentIndex(pronunciation)
 
-        def setHistoryTab():
-            pass
-
         setAccountTab()
         setSyncTab()
-        setHistoryTab()
+
+        if os.path.isfile('Youdao.cookie') or os.path.isfile('Eudict.cookie'):
+            self.container.setCurrentIndex(0)
+        else:
+            self.container.setCurrentIndex(1)
 
     def __loginEudict(self):
         username = self.eudictUsername.text()
