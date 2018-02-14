@@ -29,16 +29,17 @@
 ## 如何安装 How to Install
 - ### 从源码安装（推荐）Install from source(highly suggest)
     - 在[Release](https://github.com/megachweng/Dict2Anki/releases/tag/v2.0)中下载最新版本  
-    Download lastest version from [Release](https://github.com/megachweng/Dict2Anki/releases/tag/v2.0)
+      Download lastest version from [Release](https://github.com/megachweng/Dict2Anki/releases/tag/v2.0)  
 
-    - 解压`Zip`  
-    Unzip
+    - 解压`Zip`    
+      Unzip
 
-    - 把`PluginEntry.py 和 Dict2Anki目录` 放入Anki的`Addons`目录  
-    Move `Dict2Anki.py and Dict2Anki directory` to `Addons` directary
+    - 把`PluginEntry.py 和 Dict2Anki目录` 放入Anki的`Addons`目录  
+      Move `Dict2Anki.py and Dict2Anki directory` to `Addons` directary
 
     - 重启Anki  
-    Restart Anki 
+      Restart Anki 
+
 - ### 从AnkiWeb安装 Install from AnkiWeb
     - 打开 `工具` -> `插件` -> `浏览&安装`  
     Click `Tools` -> `Add-ons` -> `Browse&Install` 
