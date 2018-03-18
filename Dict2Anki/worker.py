@@ -21,7 +21,7 @@ class Eudict(QtCore.QThread):
         opener.addheaders = [('User-agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:58.0) Gecko/20100101 Firefox/58.0')]
         urllib2.install_opener(opener)
 
-        authentication_url = 'http://dict.eudic.net/Account/Login?returnUrl=https://my.eudic.net/studylist'
+        authentication_url = 'https://dict.eudic.net/Account/Login?returnUrl=https://my.eudic.net/studylist'
         payload = {
             'UserName': username,
             'Password': password,
