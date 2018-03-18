@@ -10,6 +10,7 @@ import urllib
 import urllib2
 import traceback
 import pickle
+import platform
 from aqt import mw
 from aqt.qt import *
 from aqt.utils import showInfo, askUser, tooltip
@@ -18,9 +19,10 @@ from PyQt4 import QtCore, QtGui
 from PyQt4.QtGui import QWidget
 from Dict2Anki.worker import Eudict, Youdao, imageDownloader, pronunciationDownloader,Lookupper
 from Dict2Anki.note import Note
-
-ssl._create_default_https_context = ssl._create_unverified_context
-
+# ssl._create_unverified_context is present in Python 2.7.9 and later.
+if int(platform.python_version().split('.')[-1]) >= 9: 
+    ssl._create_default_https_context = ssl._create_unverified_context
+    
 class Window(QWidget):
     def __init__(self, parent=None):
         super(Window, self).__init__(parent)
