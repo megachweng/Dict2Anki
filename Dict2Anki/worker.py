@@ -89,7 +89,7 @@ class Youdao(QtCore.QThread):
         }
         req = urllib2.Request(authentication_url, urllib.urlencode(payload))
         urllib2.urlopen(req)
-        if username in str(cj):
+        if username.lower() in str(cj):
             self.__saveCookies(cj)
             return True
         else:
