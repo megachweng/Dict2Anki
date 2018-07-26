@@ -16,10 +16,13 @@ def runPlugin():
         global __window
         __window = Window()
     except Exception, e:
-        traceback.print_exc(file=open('error.log', 'w+'))
+        traceback.print_exc(file=open('errorInFuc.log', 'w+'))
 
 
 # create menu item
-action = QAction("Import your WordBook", mw)
-mw.connect(action, SIGNAL("triggered()"), runPlugin)
-mw.form.menuTools.addAction(action)
+try:
+    action = QAction("Import your WordBook", mw)
+    mw.connect(action, SIGNAL("triggered()"), runPlugin)
+    mw.form.menuTools.addAction(action)
+except Exception, e:
+    traceback.print_exc(file=open('error.log', 'w+'))
