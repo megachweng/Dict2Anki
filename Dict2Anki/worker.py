@@ -12,6 +12,9 @@ import pickle
 from HTMLParser import HTMLParser
 import traceback
 from PyQt4 import QtCore
+from Dict2Anki.utils import urlRequest
+from Dict2Anki.utils import urlRetrieve
+
 class Eudict(QtCore.QThread):
     def __init__(self):
         QtCore.QThread.__init__(self)
@@ -88,7 +91,7 @@ class Youdao(QtCore.QThread):
             'savelogin':rememberme and 1 or 0,
         }
         req = urllib2.Request(authentication_url, urllib.urlencode(payload))
-        urllib2.urlopen(req)
+        urlRequest(req, 5)
         if username.lower() in str(cj):
             self.__saveCookies(cj)
             return True
@@ -120,8 +123,7 @@ class Youdao(QtCore.QThread):
             cookie = self.__loadCookies()
             opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie))
             urllib2.install_opener(opener)
-            response = urllib2.urlopen(req)
-            source = response.read()
+            source = urlRequest(req, 5).read()
             try:
                 return int(re.search('<a href="wordlist.p=(.*).tags=" class="next-page">最后一页</a>', source, re.M | re.I).group(1)) - 1
             except Exception:
@@ -131,8 +133,7 @@ class Youdao(QtCore.QThread):
             req = urllib2.Request("http://dict.youdao.com/wordbook/wordlist?p=" + str(pageIndex) + "&tags=")
             opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.__loadCookies()))
             urllib2.install_opener(opener)
-            response = urllib2.urlopen(req)
-            return response.read().decode('utf-8')
+            return urlRequest(req, 5).read().decode('utf-8')
 
         parser = parseYoudaoWordbook()
         tp = totalPage()
@@ -167,7 +168,7 @@ class imageDownloader(QtCore.QThread):
     def run(self):
         ti = len(self.imageUrls)
         for current in range(ti):
-            urllib.urlretrieve(self.imageUrls[current][1], "MG-" + self.imageUrls[current][0] + '.jpg')
+            urlRetrieve(self.imageUrls[current][1], "MG-" + self.imageUrls[current][0] + '.jpg', 5)
             self.emit(QtCore.SIGNAL('update'),current+1,ti)
             self.emit(QtCore.SIGNAL('updateProgressBar_img(int,int)'),int(current+1),int(ti))
             self.emit(QtCore.SIGNAL('seek_img(QString)'),str('Getting image: ' + self.imageUrls[current][0]))
@@ -183,7 +184,7 @@ class pronunciationDownloader(QtCore.QThread):
     def run(self):
         tp = len(self.terms)
         for current in range(tp):
-            urllib.urlretrieve(self.soundAPI.format(self.terms[current],str(self.ptype)), "MG-" + self.terms[current] + '.mp3')
+            urlRetrieve(self.soundAPI.format(self.terms[current],str(self.ptype)), "MG-" + self.terms[current] + '.mp3', 5)
             self.emit(QtCore.SIGNAL('updateProgressBar_pron(int,int)'),int(current+1),int(tp))
             self.emit(QtCore.SIGNAL('seek_pron(QString)'),str('Getting pronunciation: ' + self.terms[current]))
 
@@ -197,7 +198,7 @@ class Lookupper(QtCore.QThread):
             tw = len(self.wordList)
             for current in range(tw):
                 query = urllib.urlencode({"q": self.wordList[current]})
-                f = urllib2.urlopen("https://dict.youdao.com/jsonapi?{}&dicts=%7b%22count%22%3a+99%2c%22dicts%22%3a+%5b%5b%22ec%22%2c%22phrs%22%2c%22pic_dict%22%5d%2c%5b%22web_trans%22%5d%2c%5b%22fanyi%22%5d%2c%5b%22blng_sents_part%22%5d%5d%7d".format(query))
+                f = urlRequest("https://dict.youdao.com/jsonapi?{}&dicts=%7b%22count%22%3a+99%2c%22dicts%22%3a+%5b%5b%22ec%22%2c%22phrs%22%2c%22pic_dict%22%5d%2c%5b%22web_trans%22%5d%2c%5b%22fanyi%22%5d%2c%5b%22blng_sents_part%22%5d%5d%7d".format(query), 5)
                 r = f.read().decode('utf-8')
                 try:
                     json_result = json.loads(r)
