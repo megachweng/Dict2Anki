@@ -2,3 +2,8 @@ template.html
 test.py
 youdao.py
 .DS_Store
+\.idea/
+__pycache__/
+\.env/
+
+meta\.json
