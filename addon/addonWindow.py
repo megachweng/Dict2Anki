@@ -1,5 +1,6 @@
 import time
 from aqt import mw
+from collections import defaultdict
 from PyQt5.QtWidgets import QDialog, QApplication
 from PyQt5.QtCore import QRunnable, QThreadPool, QObject, pyqtSignal, pyqtSlot
 from .ui import Ui_Dialog
@@ -24,8 +25,7 @@ class Window(QDialog):
         self.makeConnections()
         self.threadPool = QThreadPool()
         self.threadPool.setMaxThreadCount(5)
-        self.APIList = ['BingAPI', 'YoudaoAPI']
-        self.dictionaryList = ['Eudict', 'Youdao']
+        self.dictionaryList = ['Eudict', 'YoudaoDict']
         self.restoreConfig()
         self.show()
         self.queryResults = []
@@ -53,10 +53,10 @@ class Window(QDialog):
     def restoreConfig(self):
         self.log(f'Restore config: {self.config}')
         if self.config:
-            self.ui.dictionaryComboBox.setCurrentIndex(self.config['dictionary'])
-            self.ui.APIComboBox.setCurrentIndex(self.config['API'])
-            self.ui.usernameLineEdit.setText(self.config['username'])
-            self.ui.passwordLineEdit.setText(self.config['password'])
+            index = self.config['active']
+            self.ui.dictionaryComboBox.setCurrentIndex(index)
+            self.ui.usernameLineEdit.setText(self.config['dictionaries'][index]['username'])
+            self.ui.passwordLineEdit.setText(self.config['dictionaries'][index]['password'])
             self.ui.imageCheckBox.setCheckState(self.config['image'])
             self.ui.sampleCheckBox.setChecked(self.config['sample']),
             self.ui.BrEPronCheckBox.setChecked(self.config['BrEPron'])
@@ -67,19 +67,36 @@ class Window(QDialog):
                 self.ui.deckComboBox.setCurrentText(self.config['deck'])
 
     def __saveConfig(self):
-        self.config = dict(
-            dictionary=self.ui.dictionaryComboBox.currentIndex(),
-            deck=self.ui.deckComboBox.currentText(),
-            API=self.ui.APIComboBox.currentIndex(),
-            username=self.ui.usernameLineEdit.text(),
-            password=self.ui.passwordLineEdit.text(),
-            image=self.ui.imageCheckBox.isChecked(),
-            sample=self.ui.sampleCheckBox.isChecked(),
-            BrEPron=self.ui.BrEPronCheckBox.isChecked(),
-            AmEPron=self.ui.AmEPronCheckBox.isChecked(),
-            BrEPhonetic=self.ui.BrEPhoneticCheckBox.isChecked(),
-            AmEPhonetic=self.ui.AmEPhoneticCheckBox.isChecked(),
-        )
+        index = self.ui.dictionaryComboBox.currentIndex()
+        if self.config:
+            self.config['active'] = index
+            self.config['dictionaries'][index]['username'] = self.ui.usernameLineEdit.text()
+            self.config['dictionaries'][index]['password'] = self.ui.passwordLineEdit.text()
+            self.config['deck'] = self.ui.deckComboBox.currentText()
+            self.config['image'] = self.ui.imageCheckBox.isChecked()
+            self.config['sample'] = self.ui.sampleCheckBox.isChecked()
+            self.config['BrEPron'] = self.ui.BrEPronCheckBox.isChecked()
+            self.config['AmEPron'] = self.ui.AmEPronCheckBox.isChecked()
+            self.config['BrEPhonetic'] = self.ui.BrEPhoneticCheckBox.isChecked()
+            self.config['AmEPhonetic'] = self.ui.AmEPhoneticCheckBox.isChecked()
+        else:
+            dic = [
+                {"username": None, "password": None, "cookie": None}, {"username": None, "password": None, "cookie": None}
+            ]
+            dic[index]['username'] = self.ui.usernameLineEdit.text()
+            dic[index]['password'] = self.ui.passwordLineEdit.text()
+            self.config = dict(
+                dictionaries=dic,
+                active=index,
+                deck=self.ui.deckComboBox.currentText(),
+                image=self.ui.imageCheckBox.isChecked(),
+                sample=self.ui.sampleCheckBox.isChecked(),
+                BrEPron=self.ui.BrEPronCheckBox.isChecked(),
+                AmEPron=self.ui.AmEPronCheckBox.isChecked(),
+                BrEPhonetic=self.ui.BrEPhoneticCheckBox.isChecked(),
+                AmEPhonetic=self.ui.AmEPhoneticCheckBox.isChecked(),
+            )
+
         self.mw.addonManager.writeConfig(__name__, self.config)
         self.log(f'Save configuration: {self.config}')
 
@@ -88,85 +105,80 @@ class Window(QDialog):
         # create card Model
         cardManager.createDeck(self.ui.deckComboBox.currentText(), MODELNAME)
 
-        # Init api and dictionary instance
-        self.api = getattr(api, self.APIList[self.ui.APIComboBox.currentIndex()])()
+        # # Init api, parser and dictionary instance
         self.dictionary = getattr(dictionary, self.dictionaryList[self.ui.dictionaryComboBox.currentIndex()])()
+        self.api = api.YoudaoAPI(api.YoudaoParser)
         self.log(f'Dictionary: {self.dictionary.__class__.__name__}')
         self.log(f'API: {self.api.__class__.__name__}')
 
         self.__login(self.ui.usernameLineEdit.text(), self.ui.passwordLineEdit.text())
 
     def __login(self, username, password):
-        def __checkLogin(state):
-            if not state:
-                self.log('Login Failed')
-                # showInfo('登录失败')
-                self.ui.syncPushButton.setEnabled(True)
-            else:
-                self.log('Login Success')
-                self.__getRemoteWordList()
-
-        self.ui.syncPushButton.setEnabled(False)
-        worker = Worker(self.dictionary.login, username, password)
-        worker.signals.result.connect(__checkLogin)
-        self.threadPool.start(worker)
-        while self.threadPool.activeThreadCount():
-            mw.app.processEvents()
-
-    def __getRemoteWordList(self):
-        self.log(f"Getting {self.dictionary.__class__.__name__} wordlist")
-        worker = Worker(self.dictionary.getWordList)
-        worker.signals.result.connect(self.__compare)
-        self.threadPool.start(worker)
-        while self.threadPool.activeThreadCount():
-            mw.app.processEvents()
-
-    def __compare(self, remoteWordList):
-        # todo query word which is not in anki note
-        localWordList = cardManager.getDeckWordList(
-            deckName=self.ui.deckComboBox.currentText(),
-            modelName=MODELNAME
-        )
-        local = set(localWordList)
-        remote = set(remoteWordList)
-        self.log(f'remote wordlist: \n{json.dumps(list(remote), indent=4)}')
-        self.log(f'Local wordlist: \n{json.dumps(list(local), indent=4)}')
-        needToDeleteWords = local - remote
-        needToDeleteIds = cardManager.getNoteByWord(
-            words=needToDeleteWords,
-            modelName=MODELNAME,
-            deckName=self.ui.deckComboBox.currentText()
-        )
-        needToAddWords = remote - local
-        self.log(f'Preparing add:{json.dumps(list(needToAddWords), indent=4)}')
-        self.log(f'Preparing delete:{json.dumps(list(needToDeleteWords) ,indent=4)}')
-        self.log(f'Preparing delete note IDs:\n {needToDeleteIds}')
-        mw.col.remNotes(needToDeleteIds)
-        self.log(f'Deleted')
-
-        self.__query(needToAddWords)
-
-    def __query(self, words):
-        # get query options
-
-        def container(result):
-            self.queryResults.append(result)
-
-        self.ui.progressBar.setMaximum(len(words) - 1)
-        self.ui.progressBar.reset()
-        self.log(f'Preparing query:\n{json.dumps(list(words), indent=4)}')
-
-        for word in words:
-            worker = Worker(self.api.query, word, progressInfoPrefix='Querying: ')
-            worker.signals.progress.connect(self.log)
-            worker.signals.result.connect(container)
-            worker.signals.finished.connect(self.updateProgressBar)
-            self.threadPool.start(worker)
-
-        while self.threadPool.activeThreadCount():
-            mw.app.processEvents()
-
-        self.log(f'Query results:\n{json.dumps(self.queryResults, indent=4, ensure_ascii=False)}')
+        dicIndex = self.ui.dictionaryComboBox.currentIndex()
+        # self.ui.syncPushButton.setEnabled(False)
+        cookie = self.dictionary.login(username, password, self.config['dictionaries'][dicIndex]['cookie'])
+        if cookie:
+            self.config['dictionaries'][dicIndex]['cookie'] = cookie
+            self.mw.addonManager.writeConfig(__name__, self.config)
+            self.log('Login Success')
+        else:
+            self.log('Login Failed')
+            # self.ui.syncPushButton.setEnabled(True)
+    #
+    # def __getRemoteWordList(self):
+    #     self.log(f"Getting {self.dictionary.__class__.__name__} wordlist")
+    #     worker = Worker(self.dictionary.getWordList)
+    #     worker.signals.result.connect(self.__compare)
+    #     self.threadPool.start(worker)
+    #     while self.threadPool.activeThreadCount():
+    #         mw.app.processEvents()
+    #
+    # def __compare(self, remoteWordList):
+    #     # todo query word which is not in anki note
+    #     localWordList = cardManager.getDeckWordList(
+    #         deckName=self.ui.deckComboBox.currentText(),
+    #         modelName=MODELNAME
+    #     )
+    #     local = set(localWordList)
+    #     remote = set(remoteWordList)
+    #     self.log(f'remote wordlist: \n{json.dumps(list(remote), indent=4)}')
+    #     self.log(f'Local wordlist: \n{json.dumps(list(local), indent=4)}')
+    #     needToDeleteWords = local - remote
+    #     needToDeleteIds = cardManager.getNoteByWord(
+    #         words=needToDeleteWords,
+    #         modelName=MODELNAME,
+    #         deckName=self.ui.deckComboBox.currentText()
+    #     )
+    #     needToAddWords = remote - local
+    #     self.log(f'Preparing add:{json.dumps(list(needToAddWords), indent=4)}')
+    #     self.log(f'Preparing delete:{json.dumps(list(needToDeleteWords), indent=4)}')
+    #     self.log(f'Preparing delete note IDs:\n {needToDeleteIds}')
+    #     mw.col.remNotes(needToDeleteIds)
+    #     self.log(f'Deleted')
+    #
+    #     self.__query(needToAddWords)
+    #
+    # def __query(self, words):
+    #     # get query options
+    #
+    #     def container(result):
+    #         self.queryResults.append(result)
+    #
+    #     self.ui.progressBar.setMaximum(len(words) - 1)
+    #     self.ui.progressBar.reset()
+    #     self.log(f'Preparing query:\n{json.dumps(list(words), indent=4)}')
+    #
+    #     for word in words:
+    #         worker = Worker(self.api.query, word, progressInfoPrefix='Querying: ')
+    #         worker.signals.progress.connect(self.log)
+    #         worker.signals.result.connect(container)
+    #         worker.signals.finished.connect(self.updateProgressBar)
+    #         self.threadPool.start(worker)
+    #
+    #     while self.threadPool.activeThreadCount():
+    #         mw.app.processEvents()
+    #
+    #     self.log(f'Query results:\n{json.dumps(self.queryResults, indent=4, ensure_ascii=False)}')
 
 
 class WorkerSignals(QObject):

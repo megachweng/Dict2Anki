@@ -1,9 +1,18 @@
 {
-    "dictionary": 0,
+    "dictionaries": [
+        {
+            "username": null,
+            "password": null,
+            "cookie": null
+        },
+        {
+            "username": null,
+            "password": null,
+            "cookie": null
+        }
+    ],
+    "active": 1,
     "deck": null,
-    "API": 0,
-    "username": "",
-    "password": "",
     "image": false,
     "sample": false,
     "BrEPron": false,
