@@ -1,40 +1,63 @@
 import time
 from aqt import mw
-from collections import defaultdict
 from PyQt5.QtWidgets import QDialog, QApplication
 from PyQt5.QtCore import QRunnable, QThreadPool, QObject, pyqtSignal, pyqtSlot
+
 from .ui import Ui_Dialog
 from . import api
 from . import dictionary
 from . import cardManager
 import json
+from queue import Queue
 
 __version__ = '5.0.0'
 MODELNAME = 'Dict2Anki_NEW'
 
 
 class Window(QDialog):
-    def __init__(self, parent=None):
-        QDialog.__init__(self, parent)
-        self.mw = parent
+    _config = None
+    dictionary = None
+    api = None
+    queryResults = Queue()
+    dictionaryList = ['Eudict', 'YoudaoDict']
+    threadPool = QThreadPool()
+    threadPool.setMaxThreadCount(3)
+
+    def __init__(self):
+        super(Window, self).__init__()
         self.ui = Ui_Dialog()
         self.ui.setupUi(self)
         self.updateUI()
-        self.config = self.mw.addonManager.getConfig(__name__)
         self.setWindowTitle(f'Dict2Anki-{__version__}')
         self.makeConnections()
-        self.threadPool = QThreadPool()
-        self.threadPool.setMaxThreadCount(5)
-        self.dictionaryList = ['Eudict', 'YoudaoDict']
         self.restoreConfig()
         self.show()
-        self.queryResults = []
+
+    @property
+    def config(self):
+        if not self._config:
+            self._config = mw.addonManager.getConfig(__name__)
+        return self._config
+
+    def saveConfig(self):
+        index = self.ui.dictionaryComboBox.currentIndex()
+        self._config['active'] = index
+        self._config['dictionaries'][index]['username'] = self.ui.usernameLineEdit.text()
+        self._config['dictionaries'][index]['password'] = self.ui.passwordLineEdit.text()
+        self._config['deck'] = self.ui.deckComboBox.currentText()
+        self._config['image'] = self.ui.imageCheckBox.isChecked()
+        self._config['sample'] = self.ui.sampleCheckBox.isChecked()
+        self._config['BrEPron'] = self.ui.BrEPronCheckBox.isChecked()
+        self._config['AmEPron'] = self.ui.AmEPronCheckBox.isChecked()
+        self._config['BrEPhonetic'] = self.ui.BrEPhoneticCheckBox.isChecked()
+        self._config['AmEPhonetic'] = self.ui.AmEPhoneticCheckBox.isChecked()
+        self.log(f'save configuration:\n{self._config}')
+        mw.addonManager.writeConfig(__name__, self._config)
 
     def updateUI(self):
         self.ui.deckComboBox.addItems([deck['name'] for deck in mw.col.decks.all()])
 
     def makeConnections(self):
-        self.ui.syncPushButton.clicked.connect(self.updateProgressBar)
         self.ui.syncPushButton.clicked.connect(self.btnOnclick)
 
     def updateProgressBar(self):
@@ -44,14 +67,10 @@ class Window(QDialog):
     def log(self, info):
         self.ui.logPlainTextEdit.appendPlainText(f'{time.strftime("%Y-%m-%d %H.%M.%S")} :\n{info} \n')
 
-    def exceptionHandler(self, e):
-        self.log(e)
-        # showInfo(e)
-        self.threadPool.clear()
-        self.ui.syncPushButton.setEnabled(True)
+    def errorHandler(self, e):
+        self.log(f"Error:{e}")
 
     def restoreConfig(self):
-        self.log(f'Restore config: {self.config}')
         if self.config:
             index = self.config['active']
             self.ui.dictionaryComboBox.setCurrentIndex(index)
@@ -66,147 +85,109 @@ class Window(QDialog):
             if self.config['deck'] is not None:
                 self.ui.deckComboBox.setCurrentText(self.config['deck'])
 
-    def __saveConfig(self):
-        index = self.ui.dictionaryComboBox.currentIndex()
-        if self.config:
-            self.config['active'] = index
-            self.config['dictionaries'][index]['username'] = self.ui.usernameLineEdit.text()
-            self.config['dictionaries'][index]['password'] = self.ui.passwordLineEdit.text()
-            self.config['deck'] = self.ui.deckComboBox.currentText()
-            self.config['image'] = self.ui.imageCheckBox.isChecked()
-            self.config['sample'] = self.ui.sampleCheckBox.isChecked()
-            self.config['BrEPron'] = self.ui.BrEPronCheckBox.isChecked()
-            self.config['AmEPron'] = self.ui.AmEPronCheckBox.isChecked()
-            self.config['BrEPhonetic'] = self.ui.BrEPhoneticCheckBox.isChecked()
-            self.config['AmEPhonetic'] = self.ui.AmEPhoneticCheckBox.isChecked()
-        else:
-            dic = [
-                {"username": None, "password": None, "cookie": None}, {"username": None, "password": None, "cookie": None}
-            ]
-            dic[index]['username'] = self.ui.usernameLineEdit.text()
-            dic[index]['password'] = self.ui.passwordLineEdit.text()
-            self.config = dict(
-                dictionaries=dic,
-                active=index,
-                deck=self.ui.deckComboBox.currentText(),
-                image=self.ui.imageCheckBox.isChecked(),
-                sample=self.ui.sampleCheckBox.isChecked(),
-                BrEPron=self.ui.BrEPronCheckBox.isChecked(),
-                AmEPron=self.ui.AmEPronCheckBox.isChecked(),
-                BrEPhonetic=self.ui.BrEPhoneticCheckBox.isChecked(),
-                AmEPhonetic=self.ui.AmEPhoneticCheckBox.isChecked(),
-            )
-
-        self.mw.addonManager.writeConfig(__name__, self.config)
-        self.log(f'Save configuration: {self.config}')
-
     def btnOnclick(self):
-        self.__saveConfig()
+        self.ui.syncPushButton.setEnabled(False)
         # create card Model
         cardManager.createDeck(self.ui.deckComboBox.currentText(), MODELNAME)
 
-        # # Init api, parser and dictionary instance
-        self.dictionary = getattr(dictionary, self.dictionaryList[self.ui.dictionaryComboBox.currentIndex()])()
-        self.api = api.YoudaoAPI(api.YoudaoParser)
-        self.log(f'Dictionary: {self.dictionary.__class__.__name__}')
-        self.log(f'API: {self.api.__class__.__name__}')
+        # Init dictionary instance by comboBox
+        self.dictionary = getattr(dictionary, self.dictionaryList[self.ui.dictionaryComboBox.currentIndex()])
+        self.log(f'Dictionary: {self.dictionary.__name__}')
+        remoteWordList = self._getRemoteWordList(self.ui.usernameLineEdit.text(), self.ui.passwordLineEdit.text())
 
-        self.__login(self.ui.usernameLineEdit.text(), self.ui.passwordLineEdit.text())
+        # compare local and remote word list
+        needToAddWords = self._compare(remoteWordList)
+        self.log(f'需要查询的单词({len(needToAddWords)}):{needToAddWords}')
 
-    def __login(self, username, password):
+        # start query words
+        queryResults = self._query(needToAddWords)
+
+        # save to Anki
+        self._saveToAnki(queryResults)
+        self.ui.syncPushButton.setEnabled(True)
+
+    def _getRemoteWordList(self, username, password):
         dicIndex = self.ui.dictionaryComboBox.currentIndex()
-        # self.ui.syncPushButton.setEnabled(False)
-        cookie = self.dictionary.login(username, password, self.config['dictionaries'][dicIndex]['cookie'])
+        cookie = self.config['dictionaries'][dicIndex]['cookie']
+        if [username, password] != [self.config['dictionaries'][dicIndex]['username'], self.config['dictionaries'][dicIndex]['password']]:
+            self.log('login...')
+            cookie = None
+
+        dictThread = self.dictionary(username, password, cookie)
+        dictThread.signal.log.connect(self.log)
+        dictThread.signal.updateProgress.connect(self.updateProgressBar)
+        dictThread.signal.setTotalTasks.connect(self.ui.progressBar.setMaximum)
+        dictThread.signal.exceptionOccurred.connect(self.errorHandler)
+        dictThread.start()
+        while not dictThread.isFinished():
+            mw.app.processEvents()
+            dictThread.wait(300)
+        cookie = dictThread.cookie
+        remoteWordList = dictThread.remoteWordList
         if cookie:
-            self.config['dictionaries'][dicIndex]['cookie'] = cookie
-            self.mw.addonManager.writeConfig(__name__, self.config)
-            self.log('Login Success')
+            self._config['dictionaries'][dicIndex]['cookie'] = cookie
+            self.saveConfig()
         else:
             self.log('Login Failed')
-            # self.ui.syncPushButton.setEnabled(True)
-    #
-    # def __getRemoteWordList(self):
-    #     self.log(f"Getting {self.dictionary.__class__.__name__} wordlist")
-    #     worker = Worker(self.dictionary.getWordList)
-    #     worker.signals.result.connect(self.__compare)
-    #     self.threadPool.start(worker)
-    #     while self.threadPool.activeThreadCount():
-    #         mw.app.processEvents()
-    #
-    # def __compare(self, remoteWordList):
-    #     # todo query word which is not in anki note
-    #     localWordList = cardManager.getDeckWordList(
-    #         deckName=self.ui.deckComboBox.currentText(),
-    #         modelName=MODELNAME
-    #     )
-    #     local = set(localWordList)
-    #     remote = set(remoteWordList)
-    #     self.log(f'remote wordlist: \n{json.dumps(list(remote), indent=4)}')
-    #     self.log(f'Local wordlist: \n{json.dumps(list(local), indent=4)}')
-    #     needToDeleteWords = local - remote
-    #     needToDeleteIds = cardManager.getNoteByWord(
-    #         words=needToDeleteWords,
-    #         modelName=MODELNAME,
-    #         deckName=self.ui.deckComboBox.currentText()
-    #     )
-    #     needToAddWords = remote - local
-    #     self.log(f'Preparing add:{json.dumps(list(needToAddWords), indent=4)}')
-    #     self.log(f'Preparing delete:{json.dumps(list(needToDeleteWords), indent=4)}')
-    #     self.log(f'Preparing delete note IDs:\n {needToDeleteIds}')
-    #     mw.col.remNotes(needToDeleteIds)
-    #     self.log(f'Deleted')
-    #
-    #     self.__query(needToAddWords)
-    #
-    # def __query(self, words):
-    #     # get query options
-    #
-    #     def container(result):
-    #         self.queryResults.append(result)
-    #
-    #     self.ui.progressBar.setMaximum(len(words) - 1)
-    #     self.ui.progressBar.reset()
-    #     self.log(f'Preparing query:\n{json.dumps(list(words), indent=4)}')
-    #
-    #     for word in words:
-    #         worker = Worker(self.api.query, word, progressInfoPrefix='Querying: ')
-    #         worker.signals.progress.connect(self.log)
-    #         worker.signals.result.connect(container)
-    #         worker.signals.finished.connect(self.updateProgressBar)
-    #         self.threadPool.start(worker)
-    #
-    #     while self.threadPool.activeThreadCount():
-    #         mw.app.processEvents()
-    #
-    #     self.log(f'Query results:\n{json.dumps(self.queryResults, indent=4, ensure_ascii=False)}')
+            self.ui.syncPushButton.setEnabled(True)
+        return remoteWordList
 
+    def _compare(self, remoteWordList):
+        localWordList = cardManager.getDeckWordList(
+            deckName=self.ui.deckComboBox.currentText(),
+        )
+        local = set(localWordList)
+        remote = set(remoteWordList)
+        self.log(f'local wordlist: \n{json.dumps(list(local), indent=4)}')
+        self.log(f'remote wordlist: \n{json.dumps(list(remote), indent=4)}')
+        needToDeleteWords = local - remote
+        needToDeleteIds = cardManager.getNoteByWord(
+            words=needToDeleteWords,
+            deckName=self.ui.deckComboBox.currentText()
+        )
+        needToAddWords = remote - local
+        if needToDeleteWords:
+            self.log(f'Preparing delete:{json.dumps(list(needToDeleteWords), indent=4)}')
+            self.log(f'Preparing delete note IDs:\n {needToDeleteIds}')
+            mw.col.remNotes(needToDeleteIds)
+            mw.col.reset()
+            mw.reset()
+            self.log(f'Deleted')
 
-class WorkerSignals(QObject):
-    finished = pyqtSignal()
-    result = pyqtSignal(object)
-    exception = pyqtSignal(object)
-    progress = pyqtSignal(object)
+        return needToAddWords
 
+    def _query(self, words):
 
-class Worker(QRunnable):
-    def __init__(self, fn, *args, **kwargs):
-        super(Worker, self).__init__()
-        self.fn = fn
-        self.args = args
-        self.kwargs = kwargs
-        self.signals = WorkerSignals()
-        self.progressInfoPrefix = kwargs.pop('progressInfoPrefix', '')
+        queryThread = api.YoudaoAPI(api.YoudaoParser, words)
+        queryThread.signal.log.connect(self.log)
+        queryThread.signal.updateProgress.connect(self.updateProgressBar)
+        queryThread.signal.setTotalTasks.connect(self.ui.progressBar.setMaximum)
+        queryThread.signal.exceptionOccurred.connect(self.errorHandler)
+        queryThread.start()
 
-    @pyqtSlot()
-    def run(self):
-        try:
-            self.signals.progress.emit(f'{self.progressInfoPrefix}{self.args}')
-            result = self.fn(*self.args, **self.kwargs)
-            self.signals.result.emit(result)
-        except Exception as e:
-            self.signals.exception.emit(e)
-        finally:
-            self.signals.finished.emit()
+        while not queryThread.isFinished():
+            mw.app.processEvents()
+
+        self.log(f"查询完毕!成功({queryThread.queryResults.qsize()})失败:({queryThread.failedQueries.qsize()})")
+        return queryThread.queryResults
+
+    def _saveToAnki(self, results=None):
+        options = {
+            'image': self.ui.imageCheckBox.isChecked(),
+            'samples': self.ui.sampleCheckBox.isChecked(),
+            'BrEPron': self.ui.BrEPronCheckBox.isChecked(),
+            'AmEPron': self.ui.AmEPronCheckBox.isChecked(),
+            'BrEPhonetic': self.ui.BrEPhoneticCheckBox.isChecked(),
+            'AmEPhonetic': self.ui.AmEPhoneticCheckBox.isChecked(),
+        }
+
+        while results.qsize() > 0:
+            term = results.get()
+            note = cardManager.processNote(term, options)
+            mw.col.addNote(note)
+        self.log('添加完毕')
+        mw.col.reset()
+        mw.reset()
 
 
 if __name__ == '__main__':

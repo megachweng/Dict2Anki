@@ -1,36 +1,43 @@
 import hashlib
 import re
-from abc import ABCMeta
-from abc import abstractmethod
 import time
-from queue import Queue
+from PyQt5.QtCore import QThread
 from bs4 import BeautifulSoup
 import requests
-from threading import Thread
 import itertools
+from .signals import DictSignals
+from .threadpool import ThreadPool
 
 
-class Dictionary(metaclass=ABCMeta):
+class Eudict(QThread):
+    signal = DictSignals()
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) \
+                AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
     }
-    timeout = 15
-    signal = None
 
-    @abstractmethod
-    def login(self, username, password, session):
-        pass
+    def __init__(self, username, password, cookie):
+        super(Eudict, self).__init__()
+        self.cookie = cookie
+        self.username = username
+        self.password = password
+        self.timeout = 10
+        self.remoteWordList = []
 
-    @abstractmethod
-    def getWordList(self):
-        pass
+    @staticmethod
+    def __checkCookie(cookie):
+        if cookie:
+            rsp = requests.get('https://my.eudic.net/studylist', cookies=cookie)
+            if 'dict.eudic.net/account/login' not in rsp.url:
+                return True
+        return False
 
+    def login(self, username, password, cookie):
 
-class Eudict(Dictionary):
-    def __init__(self):
-        self.session = None
+        if self.__checkCookie(cookie):
+            self.cookie = cookie
+            return cookie
 
-    def login(self, username, password):
         data = {
             "UserName": username,
             "Password": password,
@@ -44,10 +51,11 @@ class Eudict(Dictionary):
             headers=self.headers,
             data=data
         )
-        if 'EudicWeb' in requests.utils.dict_from_cookiejar(session.cookies).keys():
-            self.session = session
-            return True
-        return False
+        cookie = requests.utils.dict_from_cookiejar(session.cookies)
+        if 'EudicWeb' in cookie.keys():
+            self.cookie = cookie
+            return cookie
+        return None
 
     def getWordList(self):
         data = {
@@ -57,21 +65,41 @@ class Eudict(Dictionary):
             'categoryid': -1,
             '_': int(time.time()) * 1000,
         }
-        r = self.session.get(url='https://my.eudic.net/StudyList/WordsDataSource', timeout=self.timeout, data=data)
+        r = requests.get(
+            url='https://my.eudic.net/StudyList/WordsDataSource',
+            timeout=self.timeout,
+            data=data,
+            headers=self.headers,
+            cookies=self.cookie)
         wl = r.json()
-        return list(set(word['uuid'] for word in wl['data']))
+        wordList = list(set(word['uuid'] for word in wl['data']))
+        # update ui progressbar max value
+        self.signal.setTotalTasks.emit(len(wordList))
+        return wordList
+
+    def run(self):
+        try:
+            if self.login(self.username, self.password, self.cookie):
+                self.remoteWordList = self.getWordList()
+        except Exception as e:
+            self.signal.exceptionOccurred.emit(e)
 
 
-class YoudaoDict(Dictionary):
-    def __init__(self):
+class YoudaoDict(QThread):
+    signal = DictSignals()
+
+    def __init__(self, username, password, cookie):
+        super(YoudaoDict, self).__init__()
+        self.username = username
+        self.password = password
         self.timeout = 10
-        self.cookie = None
+        self.cookie = cookie
+        self.remoteWordList = []
 
     @staticmethod
     def __checkCookie(cookie):
         if cookie:
             rsp = requests.get('http://dict.youdao.com/wordbook/wordlist', cookies=cookie)
-            print(rsp.text)
             print(rsp.url)
             if 'account.youdao.com/login' not in rsp.url:
                 return True
@@ -80,36 +108,42 @@ class YoudaoDict(Dictionary):
     def login(self, username, password, cookie):
 
         if self.__checkCookie(cookie):
-            print('直接使用cookie')
+            self.cookie = cookie
             return cookie
-        #
-        # headers = {
-        #     'Host': 'dict.youdao.com',
-        #     'User-Agent': 'YoudaoDictPro/7.8.2.5 CFNetwork/974.2.1 Darwin/18.0.0',
-        # }
-        # params = (
-        #     ('app', 'mobile'),
-        #     ('product', 'DICT'),
-        #     ('tp', 'urstoken'),
-        #     ('cf', '7'),
-        #     ('show', 'true'),
-        #     ('format', 'json'),
-        #     ('username', username),
-        #     ('password', hashlib.md5(password.encode('utf-8')).hexdigest()),
-        #     ('um', 'true'),
-        # )
-        # session = requests.session()
-        # session.get('https://dict.youdao.com/login/acc/login', headers=headers, params=params, timeout=self.timeout)
-        # cookie = requests.utils.dict_from_cookiejar(session.cookies)
-        # if username.lower() in cookie.get('DICT_SESS', ''):
-        #     self.cookie = cookie
-        #     return cookie
-        # return None
+
+        headers = {
+            'Host': 'dict.youdao.com',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) \
+            AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
+        }
+        params = (
+            ('app', 'mobile'),
+            ('product', 'DICT'),
+            ('tp', 'urstoken'),
+            ('cf', '7'),
+            ('show', 'true'),
+            ('format', 'json'),
+            ('username', username),
+            ('password', hashlib.md5(password.encode('utf-8')).hexdigest()),
+            ('um', 'true'),
+        )
+        session = requests.session()
+        session.get('https://dict.youdao.com/login/acc/login', headers=headers, params=params, timeout=self.timeout)
+        cookie = requests.utils.dict_from_cookiejar(session.cookies)
+        if username and username.lower() in cookie.get('DICT_SESS', ''):
+            self.cookie = cookie
+            return cookie
+        return None
 
     def getWordList(self):
         def _getTotalPage():
             rsp = requests.get('http://dict.youdao.com/wordbook/wordlist', timeout=self.timeout, cookies=self.cookie)
-            return int(re.search('<a href="wordlist.p=(.*).tags=" class="next-page">最后一页</a>', rsp.text, re.M | re.I).group(1))
+            groups = re.search('<a href="wordlist.p=(.*).tags=" class="next-page">最后一页</a>', rsp.text, re.M | re.I)
+            if groups:
+                total = int(groups.group(1)) - 1
+            else:
+                total = 1
+            return total
 
         def _getWordListPerPage(page_num):
             words = []
@@ -122,52 +156,22 @@ class YoudaoDict(Dictionary):
             return words
 
         totalPages = _getTotalPage()
-        threadPool = ThreadPool(3)
+        # update ui progressbar max value
+        self.signal.setTotalTasks.emit(totalPages)
+        threadPool = ThreadPool(3, self.signal)
 
         for page in range(totalPages):
             threadPool.add_task(_getWordListPerPage, page)
         result = threadPool.wait_completion()
-
         result = list(itertools.chain(*result))
         return result
 
-
-class ThreadPool:
-    def __init__(self, number_of_workers):
-        self.tasks_queue = Queue(number_of_workers)
-        self.result_queue = Queue()
-        for _ in range(number_of_workers):
-            ThreadWorker(self.tasks_queue, self.result_queue)
-
-    def add_task(self, func, *args, **kwargs):
-        self.tasks_queue.put((func, args, kwargs))
-
-    def wait_completion(self):
-        self.tasks_queue.join()
-        _result = []
-        while not self.result_queue.empty():
-            _result.append(self.result_queue.get())
-        return _result
-
-
-class ThreadWorker(Thread):
-    def __init__(self, tasks_queue, result_queue):
-        Thread.__init__(self)
-        self.tasks_queue = tasks_queue
-        self.result_queue = result_queue
-        self.daemon = True
-        self.start()
-
     def run(self):
-        while True:
-            func, args, kwargs = self.tasks_queue.get()
-            try:
-                r = func(*args, **kwargs)
-                self.result_queue.put(r)
-            except Exception as e:
-                self.result_queue.put(e)
-            finally:
-                self.tasks_queue.task_done()
+        try:
+            if self.login(self.username, self.password, self.cookie):
+                self.remoteWordList = self.getWordList()
+        except Exception as e:
+            self.signal.exceptionOccurred.emit(e)
 
 
 if __name__ == '__main__':

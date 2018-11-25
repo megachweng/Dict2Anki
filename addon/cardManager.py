@@ -1,15 +1,15 @@
 from aqt import mw
 
 
-def getDeckWordList(deckName, modelName):
-    notes = mw.col.findNotes(f'deck:"{deckName}" note:"{modelName}"')
+def getDeckWordList(deckName):
+    notes = mw.col.findNotes(f'deck:"{deckName}"')
     return [mw.col.getNote(note)['term'] for note in notes]
 
 
-def getNoteByWord(words, deckName, modelName):
+def getNoteByWord(words, deckName):
     def _note(word):
         try:
-            return mw.col.findNotes(f'deck:"{deckName}" note:"{modelName}" term:"{word}"')[0]
+            return mw.col.findNotes(f'deck:"{deckName}" term:"{word}"')[0]
         except Exception:
             pass
 
@@ -17,13 +17,13 @@ def getNoteByWord(words, deckName, modelName):
 
 
 def createDeck(deckName, modelName):
+    # create new deck and custom model
+    model = __createModel(modelName)
+
     deckId = mw.col.decks.id(deckName)
     deck = mw.col.decks.get(deckId)
     mw.col.reset()
     mw.reset()
-
-    # create new deck and custom model
-    model = __createModel(modelName)
 
     # assign custom model to new deck
     deck["mid"] = model["id"]
@@ -33,6 +33,19 @@ def createDeck(deckName, modelName):
     mw.col.models.setCurrent(model)
     mw.col.models.current()["did"] = deck["id"]
     mw.col.models.save(model)
+
+
+def processNote(term, options):
+    note = mw.col.newNote()
+    note["term"] = term["term"].strip()
+    note["image"] = (term["image"] or '') if options['image'] else ''
+    note["BrEPron"] = (term["pronunciations"]['uk_url'] or '') if options['BrEPron'] else ''
+    note["AmEPron"] = (term["pronunciations"]['us_url'] or '') if options['AmEPron'] else ''
+    note["BrEPhonetic"] = (term["pronunciations"]['uk_phonetic'] or '') if options["BrEPhonetic"] else ''
+    note["AmEPhonetic"] = (term["pronunciations"]['us_phonetic'] or '') if options["AmEPhonetic"] else ''
+    note["definitions"] = ' '.join(term['definitions'])
+    note["samples"] = f'''<ul>{''.join([f"<li>{e}<br>{c}</li>" for e, c in term['samples']])}</ul>''' if options['samples'] else ''
+    return note
 
 
 def __createModel(modelName):
