@@ -1,15 +1,13 @@
-import anki
 from aqt import mw
 from PyQt5.QtWidgets import QAction
-from .addon.addonWindow import Window
-
+from .src.addonWindow import Window
 WINDOW = None
 
 
 def showWindow():
     global WINDOW
     WINDOW = Window()
-    WINDOW.exec_()
+    # WINDOW.exec()
 
 
 action = QAction("Dick2Anki...", mw)

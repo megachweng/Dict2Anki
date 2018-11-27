@@ -1,34 +1,13 @@
-import requests
-from abc import ABCMeta, abstractmethod
-from PyQt5.QtCore import QThread
-from .signals import APISignals
-from .threadpool import ThreadPool
 from urllib.parse import urlencode
-from requests.packages.urllib3.util.retry import Retry
-from requests.adapters import HTTPAdapter
-from queue import Queue
+
+import requests
+from PyQt5.QtCore import QObject, pyqtSlot
+from .pool import ThreadPool
+
+from .signals import APISIG
 
 
-class Parser(metaclass=ABCMeta):
-
-    @abstractmethod
-    def definitions(self):
-        pass
-
-    @abstractmethod
-    def pronunciations(self):
-        pass
-
-    @abstractmethod
-    def samples(self):
-        pass
-
-    @abstractmethod
-    def image(self):
-        pass
-
-
-class YoudaoParser(Parser):
+class YoudaoParser:
     def __init__(self, json_obj, term):
         self._result = json_obj
         self.term = term
@@ -89,44 +68,38 @@ class YoudaoParser(Parser):
         }
 
 
-class YoudaoAPI(QThread):
+class YoudaoAPI(QObject):
+    timeout = 10
     s = requests.Session()
-    retries = Retry(total=3, backoff_factor=0.1)
-    s.mount('http://', HTTPAdapter(max_retries=retries))
     url = 'https://dict.youdao.com/jsonapi'
-    params = {
-        "dicts": {"count": 99, "dicts": [["ec", "pic_dict"], ["web_trans"], ["fanyi"], ["blng_sents_part"]]}
-    }
-    signal = APISignals()
+    params = {"dicts": {"count": 99, "dicts": [["ec", "pic_dict"], ["web_trans"], ["fanyi"], ["blng_sents_part"]]}}
 
-    def __init__(self, parser, terms):
-        super(YoudaoAPI, self).__init__()
+    def __init__(self, wordList, parser):
+        super().__init__()
+        self.SIG = APISIG()
+        self.wordList = wordList
         self.parser = parser
-        self.terms = terms
-        self.queryResults = Queue()
-        self.failedQueries = Queue()
 
-    def query(self, word) -> Parser:
-        rsp = self.s.get(
-            self.url,
-            params=urlencode(dict(self.params, **{'q': word})),
-            timeout=5
-        )
-        return self.parser(rsp.json(), word).json
+    def query(self, word):
+        try:
+            rsp = self.s.get(
+                self.url,
+                params=urlencode(dict(self.params, **{'q': word})),
+            )
+            jsonResult = self.parser(rsp.json(), word).json
+            self.SIG.log.emit(f"查询:{word}")
+            return jsonResult
+        except Exception as e:
+            self.SIG.log.emit(f"查询:{word}异常")
+            self.SIG.exceptionOccurred.emit(e)
+        finally:
+            self.SIG.progress.emit()
 
+    @pyqtSlot()
     def run(self):
-        self.signal.setTotalTasks.emit(len(self.terms))
-        threadPool = ThreadPool(3, self.signal)
-
-        for term in self.terms:
-            try:
-                threadPool.add_task(self.query, term)
-                result = threadPool.wait_completion()[0]
-                self.queryResults.put(result)
-            except Exception as e:
-                self.signal.exceptionOccurred.emit(e)
-                self.failedQueries.put(term)
-
-
-if __name__ == '__main__':
-    pass
+        self.SIG.totalTasks.emit(len(self.wordList))
+        TP = ThreadPool(2)
+        for word in self.wordList:
+            TP.add_task(self.query, word)
+        queryResults = TP.wait_complete()
+        self.SIG.wordsReady.emit(queryResults)
