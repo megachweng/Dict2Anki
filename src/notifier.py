@@ -1,6 +1,5 @@
 from PyQt5.QtCore import pyqtSignal, QThread
 import requests
-from distutils.version import StrictVersion
 
 
 class Version(QThread):
@@ -10,14 +9,14 @@ class Version(QThread):
 
     def __init__(self, currentVersion):
         super().__init__()
-        self.currentVersion = StrictVersion(currentVersion)
+        self.currentVersion = currentVersion
 
     def run(self):
         try:
             self.log.emit('检查新版本')
             rsp = requests.get(self.url, timeout=10)
-            version = rsp.json()['name'][1:]
-            if StrictVersion(version) > self.currentVersion:
+            version = rsp.json()['tag_name']
+            if self.currentVersion.startswith('v') and version != self.currentVersion:
                 self.hasNewVersion.emit(version)
             else:
                 self.log.emit(f'当前为最新版本:{self.currentVersion}')

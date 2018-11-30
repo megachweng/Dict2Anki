@@ -12,7 +12,7 @@ from .notifier import Version
 import time
 import json
 
-__VERSION__ = '5.0.0'
+__VERSION__ = 'v5.0.0'
 MODELNAME = 'Dict2Anki_NEW'
 DICTIONARYLIST = ['Youdao', 'Eudict']
 
