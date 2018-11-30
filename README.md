@@ -13,8 +13,8 @@
 
 ## How to use
 ### 有道词典
-<span><img src = "https://raw.githubusercontent.com/megachweng/Dict2Anki/master/screenshots/youdao.gif"></span>
+<span><img src = "https://raw.githubusercontent.com/megachweng/Dict2Anki/master/screenshot/youdao.gif"></span>
 ### 欧陆词典
-<span><img src = "https://raw.githubusercontent.com/megachweng/Dict2Anki/master/screenshots/eudict.gif"></span>
+<span><img src = "https://raw.githubusercontent.com/megachweng/Dict2Anki/master/screenshot/eudict.gif"></span>
 ### 同步
-<span><img src = "https://raw.githubusercontent.com/megachweng/Dict2Anki/master/screenshots/sync.gif"></span>
+<span><img src = "https://raw.githubusercontent.com/megachweng/Dict2Anki/master/screenshot/sync.gif"></span>
