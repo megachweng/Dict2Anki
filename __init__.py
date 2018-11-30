@@ -1,13 +1,13 @@
 from aqt import mw
 from PyQt5.QtWidgets import QAction
 from .src.addonWindow import Window
-WINDOW = None
+
+_window = None
 
 
 def showWindow():
-    global WINDOW
-    WINDOW = Window()
-    # WINDOW.exec()
+    global _window
+    _window = Window()
 
 
 action = QAction("Dick2Anki...", mw)

@@ -3,11 +3,12 @@ from copy import deepcopy
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import QThread, pyqtSlot
 from aqt import mw
-from aqt.utils import askUser, showCritical
+from aqt.utils import askUser, showCritical, showInfo, tooltip, openLink
 from .ui import Ui_Form
 from . import cardManager
 from . import dictionary
 from . import api
+from .notifier import Version
 import time
 import json
 
@@ -18,9 +19,10 @@ DICTIONARYLIST = ['Youdao', 'Eudict']
 
 class Window(QWidget):
     _config = None
+    hasStarted = False
 
     def __init__(self):
-        super().__init__()
+        super(Window, self).__init__()
         self.ui = Ui_Form()
         self.ui.setupUi(self)
         self.setWindowTitle(f'Dict2Anki-{__VERSION__}')
@@ -28,7 +30,21 @@ class Window(QWidget):
         self.updateUI()
         self.restoreConfig()
         self.threadList = []
+        self.versionCheckingThread = None
+        self.checkVersion()
         self.show()
+
+    def checkVersion(self):
+
+        @pyqtSlot(object)
+        def haveNewVersion(version):
+            if askUser(f'有新版本:{version}是否更新？'):
+                openLink('https://github.com/megachweng/Dict2Anki/releases')
+
+        self.versionCheckingThread = Version(__VERSION__)
+        self.versionCheckingThread.hasNewVersion.connect(haveNewVersion)
+        self.versionCheckingThread.log.connect(self.log)
+        self.versionCheckingThread.start()
 
     @property
     def config(self):
@@ -225,3 +241,4 @@ class Window(QWidget):
         mw.reset()
 
         self.ui.startSyncBtn.setEnabled(True)
+        tooltip(f'添加{len(words)}个笔记')

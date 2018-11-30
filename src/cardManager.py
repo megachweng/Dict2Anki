@@ -69,8 +69,10 @@ def __createModel(modelName):
 
     t['qfmt'] = '''
                 <h class='term'>{{term}}</h>
-                <br>
-                </br>
+                <br></br>
+                <span>
+                <img src={{image}}>
+                </span>
                 <div>
                 <span class='phonetic'>BrE: {{BrEPhonetic}}</span>
                 <span class='phonetic'>AmE: {{BrEPhonetic}}</span>
@@ -94,7 +96,7 @@ def __createModel(modelName):
                 .card {
                 font-family: arial;
                 font-size: 20px;
-                text-align: center;
+                text-align: right;
                 color: black;
                 background-color: white;
                 }
