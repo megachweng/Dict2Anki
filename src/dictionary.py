@@ -176,10 +176,7 @@ class Eudict(QObject):
                 data={'categoryid': -1}
             )
             records = r.json()['recordsTotal']
-            print(records)
             total = ceil(records / 100)
-            print('record', records)
-            print('total', total)
             self.SIG.totalTasks.emit(total)
             self.SIG.log.emit(f"总页数:{total}")
             return total
@@ -206,7 +203,6 @@ class Eudict(QObject):
                 cookies=self.cookie)
             wl = r.json()
             wordList = list(set(word['uuid'] for word in wl['data']))
-            print(wordList, pageNumber)
         except Exception as e:
             self.SIG.exceptionOccurred.emit(e)
             self.SIG.log.emit(f'网络异常{e}')
@@ -219,5 +215,4 @@ class Eudict(QObject):
         if self.login():
             words = [self.getWordPerPage(n) for n in range(self.getTotalPage())]
             chained_words = list(chain(*words))
-            print('一共', len(chained_words))
             self.SIG.wordsReady.emit(chained_words)
