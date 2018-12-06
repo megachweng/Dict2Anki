@@ -12,7 +12,7 @@ from .notifier import Version
 import time
 import json
 
-__VERSION__ = 'v5.0.0'
+__VERSION__ = 'v5.0.1'
 MODELNAME = 'Dict2Anki_NEW'
 DICTIONARYLIST = ['Youdao', 'Eudict']
 
@@ -160,6 +160,28 @@ class Window(QWidget):
         dictWorker.moveToThread(dictWorkerThread)
         dictWorkerThread.start()
 
+    @pyqtSlot(object)
+    def query(self, remoteWords):
+        self.log(f"远程单词本:{remoteWords}")
+        _, t = self.threadList[0]
+        while not t.isFinished():
+            t.wait(1)
+            t.quit()
+            mw.app.processEvents()
+
+        needToQueryWords = self.compare(remoteWords)
+
+        queryThread = QThread()
+        queryWorker = api.YoudaoAPI(needToQueryWords, api.YoudaoParser)
+        self.threadList.append((queryWorker, queryThread))
+        queryWorker.SIG.progress.connect(self.updateProgress)
+        queryWorker.SIG.totalTasks.connect(self.ui.progressBar.setMaximum)
+        queryWorker.SIG.wordsReady.connect(self.addNote)
+        queryWorker.SIG.log.connect(self.log)
+        queryWorker.moveToThread(queryThread)
+        queryThread.started.connect(queryWorker.run)
+        queryThread.start()
+
     def compare(self, remoteWordList):
         localWordList = cardManager.getDeckWordList(
             deckName=self.ui.deckComboBox.currentText(),
@@ -191,28 +213,6 @@ class Window(QWidget):
             self.log("没有需要查询的单词。")
 
         return needToAddWords
-
-    @pyqtSlot(object)
-    def query(self, remoteWords):
-        self.log(f"远程单词本:{remoteWords}")
-        _, t = self.threadList[0]
-        while not t.isFinished():
-            t.wait(1)
-            t.quit()
-            mw.app.processEvents()
-
-        needToQueryWords = self.compare(remoteWords)
-
-        queryThread = QThread()
-        queryWorker = api.YoudaoAPI(needToQueryWords, api.YoudaoParser)
-        self.threadList.append((queryWorker, queryThread))
-        queryWorker.SIG.progress.connect(self.updateProgress)
-        queryWorker.SIG.totalTasks.connect(self.ui.progressBar.setMaximum)
-        queryWorker.SIG.wordsReady.connect(self.addNote)
-        queryWorker.SIG.log.connect(self.log)
-        queryWorker.moveToThread(queryThread)
-        queryThread.started.connect(queryWorker.run)
-        queryThread.start()
 
     @pyqtSlot(object)
     def addNote(self, words):
