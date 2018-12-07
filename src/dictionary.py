@@ -6,7 +6,7 @@ import requests
 import logging
 from bs4 import BeautifulSoup
 from .signals import DictSIG
-
+from math import ceil
 from PyQt5.QtCore import QObject, pyqtSlot
 
 
@@ -167,17 +167,34 @@ class Eudict(QObject):
             self.SIG.log.emit(f'网络异常:{e}')
             return False
 
-    def getWordList(self):
+    def getTotalPage(self):
+        try:
+            r = requests.get(
+                url='https://my.eudic.net/StudyList/WordsDataSource',
+                timeout=self.timeout,
+                cookies=self.cookie,
+                data={'categoryid': -1}
+            )
+            records = r.json()['recordsTotal']
+            total = ceil(records / 100)
+            self.SIG.totalTasks.emit(total)
+            self.SIG.log.emit(f"总页数:{total}")
+            return total
+        except Exception as e:
+            self.SIG.exceptionOccurred.emit(e)
+            self.SIG.log.emit(f'网络异常{e}')
+
+    def getWordPerPage(self, pageNumber):
         wordList = []
-        self.SIG.log.emit('获取单词本')
         data = {
             'columns[2][data]': 'word',
-            'start': 0,
-            'length': 1000000,
+            'start': pageNumber * 100,
+            'length': 100,
             'categoryid': -1,
             '_': int(time.time()) * 1000,
         }
         try:
+            self.SIG.log.emit(f'获取单词本第:{pageNumber}页')
             r = requests.get(
                 url='https://my.eudic.net/StudyList/WordsDataSource',
                 timeout=self.timeout,
@@ -188,12 +205,14 @@ class Eudict(QObject):
             wordList = list(set(word['uuid'] for word in wl['data']))
         except Exception as e:
             self.SIG.exceptionOccurred.emit(e)
-            self.SIG.log.emit('网络异常')
+            self.SIG.log.emit(f'网络异常{e}')
         finally:
+            self.SIG.progress.emit()
             return wordList
 
     @pyqtSlot()
     def run(self):
         if self.login():
-            words = self.getWordList()
-            self.SIG.wordsReady.emit(words)
+            words = [self.getWordPerPage(n) for n in range(self.getTotalPage())]
+            chained_words = list(chain(*words))
+            self.SIG.wordsReady.emit(chained_words)
