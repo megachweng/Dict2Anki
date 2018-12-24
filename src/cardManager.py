@@ -35,7 +35,7 @@ def createDeck(deckName, modelName):
     mw.col.models.save(model)
 
 
-def processNote(term, options):
+def processNote(term, options) -> (object, str, str):
     note = mw.col.newNote()
     note["term"] = term["term"].strip()
     note["image"] = (term["image"] or '') if options['image'] else ''
@@ -45,13 +45,17 @@ def processNote(term, options):
     note["AmEPhonetic"] = (term["pronunciations"]['us_phonetic'] or '') if options["AmEPhonetic"] else ''
     note["definitions"] = ' '.join(term['definitions'])
     note["samples"] = f'''<ul>{''.join([f"<li>{e}<br>{c}</li>" for e, c in term['samples']])}</ul>''' if options['samples'] else ''
-    return note
+    note["pron"] = f'[sound:bre_{term["term"]}.mp3] [sound:ame_{term["term"]}.mp3]'
+    return note, (f'bre_{term["term"]}', note["BrEPron"]), (f'ame_{term["term"]}', note["AmEPron"])
 
 
 def __createModel(modelName):
     md = mw.col.models
     existing = md.byName(modelName)
     if existing:
+        if 'pron' not in md.fieldNames(existing):
+            md.addField(existing, md.newField('pron'))
+            md.update(existing)
         return existing
     m = md.new(modelName)
 
@@ -64,6 +68,7 @@ def __createModel(modelName):
     md.addField(m, md.newField("BrEPhonetic"))
     md.addField(m, md.newField("AmEPhonetic"))
     md.addField(m, md.newField("samples"))
+    md.addField(m, md.newField("pron"))
 
     t = md.newTemplate("Normal")
 
@@ -79,6 +84,7 @@ def __createModel(modelName):
                 </div>
                 <hr>
                 {{samples}}
+                {{pron}}
                 '''
     t['afmt'] = '''
                 <h class='term'>{{term}}</h><br>
@@ -96,7 +102,7 @@ def __createModel(modelName):
                 .card {
                 font-family: arial;
                 font-size: 20px;
-                text-align: right;
+                text-align: left;
                 color: black;
                 background-color: white;
                 }

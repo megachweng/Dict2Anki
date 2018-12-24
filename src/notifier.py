@@ -3,7 +3,7 @@ import requests
 
 
 class Version(QThread):
-    hasNewVersion = pyqtSignal(object)
+    hasNewVersion = pyqtSignal(object, object)
     log = pyqtSignal(str)
     url = 'https://api.github.com/repos/megachweng/Dict2Anki/releases/latest'
 
@@ -16,8 +16,9 @@ class Version(QThread):
             self.log.emit('检查新版本')
             rsp = requests.get(self.url, timeout=10)
             version = rsp.json()['tag_name']
+            change_log = rsp.json()['body']
             if self.currentVersion.startswith('v') and version != self.currentVersion:
-                self.hasNewVersion.emit(version)
+                self.hasNewVersion.emit(version, change_log)
             else:
                 self.log.emit(f'当前为最新版本:{self.currentVersion}')
         except Exception as e:

@@ -17,3 +17,10 @@ class APISIG(QObject):
     totalTasks = pyqtSignal(int)
     log = pyqtSignal(str)
 
+
+class AudioDownloaderSIG(QObject):
+    exceptionOccurred = pyqtSignal(object)
+    downloadFinished = pyqtSignal()
+    progress = pyqtSignal()
+    totalTasks = pyqtSignal(int)
+    log = pyqtSignal(str)

@@ -12,7 +12,7 @@ from .notifier import Version
 import time
 import json
 
-__VERSION__ = 'v5.0.1'
+__VERSION__ = 'v5.0.2'
 MODELNAME = 'Dict2Anki_NEW'
 DICTIONARYLIST = ['Youdao', 'Eudict']
 
@@ -36,9 +36,9 @@ class Window(QWidget):
 
     def checkVersion(self):
 
-        @pyqtSlot(object)
-        def haveNewVersion(version):
-            if askUser(f'有新版本:{version}是否更新？'):
+        @pyqtSlot(object, object)
+        def haveNewVersion(version, change_log):
+            if askUser(f'有新版本:{version}是否更新？\n\n{change_log.strip()}'):
                 openLink('https://github.com/megachweng/Dict2Anki/releases')
 
         self.versionCheckingThread = Version(__VERSION__)
@@ -232,13 +232,40 @@ class Window(QWidget):
             'BrEPhonetic': self.ui.BrEPhoneticCheckBox.isChecked(),
             'AmEPhonetic': self.ui.AmEPhoneticCheckBox.isChecked(),
         }
+        audios = []
         for word in words:
             self.log(f'添加卡片:{word["term"]}')
-            note = cardManager.processNote(word, options)
+            note, BrEPron, AmEPron = cardManager.processNote(word, options)
             mw.col.addNote(note)
+            for pron in [BrEPron, AmEPron]:
+                if pron[1]:  # 只下载有发音的单词
+                    audios.append(pron)
             mw.app.processEvents()
         mw.col.reset()
         mw.reset()
 
-        self.ui.startSyncBtn.setEnabled(True)
         tooltip(f'添加{len(words)}个笔记')
+
+        if audios:
+            self.log('下载发音')
+            self.downloadAudio(audios)
+        else:
+            self.ui.startSyncBtn.setEnabled(True)
+
+    def downloadAudio(self, audios):
+        def done():
+            for _, t in self.threadList:
+                t.terminate()
+            self.ui.startSyncBtn.setEnabled(True)
+            tooltip(f'发音下载完成！')
+
+        downloadThread = QThread()
+        downloadWorker = api.AudioDownloader(audios)
+        self.threadList.append((downloadWorker, downloadThread))
+        downloadWorker.SIG.progress.connect(self.updateProgress)
+        downloadWorker.SIG.totalTasks.connect(self.ui.progressBar.setMaximum)
+        downloadWorker.SIG.log.connect(self.log)
+        downloadWorker.moveToThread(downloadThread)
+        downloadThread.started.connect(downloadWorker.run)
+        downloadThread.start()
+        downloadWorker.SIG.downloadFinished.connect(done)
