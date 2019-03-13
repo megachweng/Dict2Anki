@@ -1,0 +1,7 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>failed.png</file>
+    <file>wait.png</file>
+    <file>done.png</file>
+  </qresource>
+</RCC>
