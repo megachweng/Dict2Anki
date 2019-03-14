@@ -24,12 +24,13 @@ class Eudict:
         self.groups = []
 
     def login(self, username: str, password: str, cookie: dict = None) -> dict:
+        self.session.cookies.clear()
         if cookie and self._checkCookie(cookie):
             return cookie
         else:
             return self._login(username, password)
 
-    def _checkCookie(self, cookie) -> bool:
+    def _checkCookie(self, cookie: dict) -> bool:
         """
         cookie有效性检验
         :param cookie:
@@ -45,7 +46,7 @@ class Eudict:
         logger.info(f'Cookie失效({cookie})')
         return False
 
-    def _login(self, username: str, password: str):
+    def _login(self, username: str, password: str) -> dict:
         """账号和密码登陆"""
         data = {
             "UserName": username,

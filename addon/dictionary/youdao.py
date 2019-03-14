@@ -32,6 +32,7 @@ class Youdao:
         :param cookie: cookie
         :return: cookie dict
         """
+        self.session.cookies.clear()
         if cookie and self._checkCookie(cookie):
             return cookie
         else:
@@ -53,7 +54,7 @@ class Youdao:
         logger.info(f'Cookie失效({cookie})')
         return False
 
-    def _login(self, username: str, password: str):
+    def _login(self, username: str, password: str) -> dict:
         """账号和密码登陆"""
         data = (('app', 'mobile'),
                 ('product', 'DICT'),
