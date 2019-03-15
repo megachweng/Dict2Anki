@@ -18,7 +18,7 @@ except ImportError:
     from PyQt5.QtWidgets import QApplication
     from addon.addonWindow import Windows
     import sys
-    if os.environ.get('dict2anki-dev'):
+    if os.environ.get('DEVDICT2ANKI'):
         app = QApplication(sys.argv)
         window = Windows()
         window.show()
