@@ -199,6 +199,10 @@ class Windows(QDialog, mainUI.Ui_Dialog):
     @pyqtSlot()
     def on_pullRemoteWordsBtn_clicked(self):
         """获取单词按钮点击事件"""
+        if not self.deckComboBox.currentText():
+            showInfo('\n请选择或输入要同步的牌组')
+            return
+
         self.mainTab.setEnabled(False)
         self.progressBar.setValue(0)
         self.progressBar.setMaximum(0)
@@ -428,8 +432,8 @@ class Windows(QDialog, mainUI.Ui_Dialog):
             if wordItem.queryResult:
                 addNoteToDeck(deck, model, currentConfig, wordItem.queryResult)
                 # 添加发音任务
-                if whichPron and wordItem.queryItem.get(whichPron):
-                    audiosDownloadTasks.append((wordItem.queryResult['term'] + '.mp3', wordItem.queryItem[whichPron],))
+                if whichPron and wordItem.queryResult.get(whichPron):
+                    audiosDownloadTasks.append((wordItem.queryResult['term'] + '.mp3', wordItem.queryResult[whichPron],))
 
         if newWordCount and (self.AmEPronRadioButton.isChecked() or self.BrEPronRadioButton.isChecked()):
             whichPron = 'AmEPron' if self.AmEPronRadioButton.isChecked() else 'BrEPron'

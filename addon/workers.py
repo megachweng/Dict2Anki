@@ -4,7 +4,7 @@ from itertools import chain
 import requests
 import json
 from PyQt5.QtCore import QObject, pyqtSignal, QThread
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from .misc import ThreadPool
 
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
@@ -81,10 +81,11 @@ class RemoteWordFetchingWorker(QObject):
         for groupName, groupId in self.selectedGroups:
             totalPage = self.selectedDict.getTotalPage(groupName, groupId)
             self.setProgress.emit(totalPage)
-            with ThreadPoolExecutor(max_workers=3) as executor:
-                futureToWords = [executor.submit(_pull, i, groupName, groupId) for i in range(totalPage)]
-                remoteWordList = list(chain(*[ft.result() for ft in as_completed(futureToWords)]))
-                self.doneThisGroup.emit(remoteWordList)
+            with ThreadPool(max_workers=3) as executor:
+                for i in range(totalPage):
+                    executor.submit(_pull, i, groupName, groupId)
+            remoteWordList = list(chain(*[ft for ft in executor.result]))
+            self.doneThisGroup.emit(remoteWordList)
 
         self.done.emit()
 
@@ -119,7 +120,7 @@ class QueryWorker(QObject):
             self.tick.emit()
             return queryResult
 
-        with ThreadPoolExecutor(max_workers=3) as executor:
+        with ThreadPool(max_workers=3) as executor:
             for word in self.wordList:
                 executor.submit(_query, word['term'], word['row'])
 
@@ -158,7 +159,7 @@ class AudioDownloadWorker(QObject):
             finally:
                 self.tick.emit()
 
-        with ThreadPoolExecutor(max_workers=3) as executor:
+        with ThreadPool(max_workers=3) as executor:
             for fileName, url in self.audios:
                 executor.submit(__download, url, fileName)
         self.done.emit()

@@ -82,7 +82,6 @@ class API:
         query_result = None
         try:
             rsp = cls.session.get(cls.url, params=urlencode({'Word': word.translate(validator)}), timeout=cls.timeout)
-            logger.info(f"{word}---{rsp.text}")
             query_result = cls.parser(rsp.json(), word).result
         except Exception as e:
             logger.exception(e)

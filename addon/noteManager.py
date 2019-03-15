@@ -114,8 +114,8 @@ def addNoteToDeck(deckObject, modelObject, currentConfig: dict, oneQueryResult: 
         if oneQueryResult.get(configName):
             # 短语例句
             if configName in ['sentence', 'phrase'] and currentConfig[configName]:
-                newNote[f'{configName}Front'] = '\n'.join([f'<li>{e}</li>' for e, _ in oneQueryResult[configName]])
-                newNote[f'{configName}Back'] = '\n'.join([f'<li>{e}<br>{c}</li>' for e, c in oneQueryResult[configName]])
+                newNote[f'{configName}Front'] = '\n'.join([f'<li>{e.strip()}</li>' for e, _ in oneQueryResult[configName]])
+                newNote[f'{configName}Back'] = '\n'.join([f'<li>{e.strip()}<br>{c.strip()}</li>' for e, c in oneQueryResult[configName]])
             # 图片
             elif configName == 'image':
                 newNote[configName] = f'src="{oneQueryResult[configName]}"'
