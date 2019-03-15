@@ -16,7 +16,7 @@ class Parser:
 
     @property
     def definition(self) -> list:
-        return [''.join([d.get('pos', ''), d.get('def', '')]) for d in self._result.get('defs') or [dict()]]
+        return [''.join([d.get('pos', ''), d.get('def', '')]) for d in self._result.get('defs') or []]
 
     @property
     def pronunciations(self) -> dict:
@@ -44,7 +44,7 @@ class Parser:
 
     @property
     def sentence(self) -> list:
-        return [(s.get('eng'), s.get('chn'),) for s in self._result.get('sams', dict())]
+        return [(s.get('eng'), s.get('chn'),) for s in self._result.get('sams') or []]
 
     @property
     def image(self) -> None:
@@ -82,6 +82,7 @@ class API:
         query_result = None
         try:
             rsp = cls.session.get(cls.url, params=urlencode({'Word': word.translate(validator)}), timeout=cls.timeout)
+            logger.info(f"{word}---{rsp.text}")
             query_result = cls.parser(rsp.json(), word).result
         except Exception as e:
             logger.exception(e)

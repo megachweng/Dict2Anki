@@ -1,0 +1,27 @@
+{
+  "deck": "",
+  "selectedDict": 0,
+  "selectedGroup": null,
+  "selectedApi": 0,
+  "credential": [
+    {
+      "username": "",
+      "password": "",
+      "cookie": ""
+    },
+    {
+      "username": "",
+      "password": "",
+      "cookie": ""
+    }
+  ],
+  "definition": true,
+  "sentence": true,
+  "image": true,
+  "phrase": true,
+  "AmEPhonetic": true,
+  "BrEPhonetic": true,
+  "BrEPron": false,
+  "AmEPron": false,
+  "noPron": true
+}

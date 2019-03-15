@@ -5,12 +5,17 @@ import requests
 import json
 from PyQt5.QtCore import QObject, pyqtSignal, QThread
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+from requests.adapters import HTTPAdapter
+from urllib3 import Retry
+
 from .constants import VERSION, VERSION_CHECK_API
 
 
 class VersionCheckWorker(QObject):
     haveNewVersion = pyqtSignal(str, str)
     finished = pyqtSignal()
+    start = pyqtSignal()
     logger = logging.getLogger('dict2Anki.workers.UpdateCheckWorker')
 
     def run(self):
@@ -20,7 +25,7 @@ class VersionCheckWorker(QObject):
             version = rsp['tag_name']
             changeLog = rsp['body']
             if version != VERSION:
-                self.logger.info(f'检查到新版本{version}')
+                self.logger.info(f'检查到新版本:{version}--{changeLog.strip()}')
                 self.haveNewVersion.emit(version.strip(), changeLog.strip())
             else:
                 self.logger.info(f'当前为最新版本:{VERSION}')
@@ -53,6 +58,7 @@ class LoginWorker(QObject):
 class RemoteWordFetchingWorker(QObject):
     start = pyqtSignal()
     tick = pyqtSignal()
+    setProgress = pyqtSignal(int)
     done = pyqtSignal()
     doneThisGroup = pyqtSignal(list)
     logger = logging.getLogger('dict2Anki.workers.RemoteWordFetchingWorker')
@@ -69,17 +75,17 @@ class RemoteWordFetchingWorker(QObject):
             if currentThread.isInterruptionRequested():
                 return
             wordPerPage = self.selectedDict.getWordsByPage(*args)
-            # self.done_this_page.emit(wordPerPage)
+            self.tick.emit()
             return wordPerPage
 
         for groupName, groupId in self.selectedGroups:
-            total = self.selectedDict.getTotalPage(groupName, groupId)
-
+            totalPage = self.selectedDict.getTotalPage(groupName, groupId)
+            self.setProgress.emit(totalPage)
             with ThreadPoolExecutor(max_workers=3) as executor:
-                futureToWords = [executor.submit(_pull, i, groupName, groupId) for i in range(total)]
+                futureToWords = [executor.submit(_pull, i, groupName, groupId) for i in range(totalPage)]
                 remoteWordList = list(chain(*[ft.result() for ft in as_completed(futureToWords)]))
                 self.doneThisGroup.emit(remoteWordList)
-            self.tick.emit()
+
         self.done.emit()
 
 
@@ -118,3 +124,41 @@ class QueryWorker(QObject):
                 executor.submit(_query, word['term'], word['row'])
 
         self.allQueryDone.emit()
+
+
+class AudioDownloadWorker(QObject):
+    start = pyqtSignal()
+    tick = pyqtSignal()
+    done = pyqtSignal()
+    logger = logging.getLogger('dict2Anki.workers.AudioDownloadWorker')
+    retries = Retry(total=5, backoff_factor=3, status_forcelist=[500, 502, 503, 504])
+    session = requests.Session()
+    session.mount('http://', HTTPAdapter(max_retries=retries))
+    session.mount('https://', HTTPAdapter(max_retries=retries))
+
+    def __init__(self, audios: [tuple]):
+        super().__init__()
+        self.audios = audios
+
+    def run(self):
+        currentThread = QThread.currentThread()
+
+        def __download(fileName, url):
+            try:
+                if currentThread.isInterruptionRequested():
+                    return
+                r = self.session.get(url, stream=True)
+                with open(f'{fileName}.mp3', 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=1024):
+                        if chunk:
+                            f.write(chunk)
+                self.logger.info(f'{fileName} 下载完成')
+            except Exception as e:
+                self.logger.warning(f'下载{fileName}:{url}异常: {e}')
+            finally:
+                self.tick.emit()
+
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            for fileName, url in self.audios:
+                executor.submit(__download, url, fileName)
+        self.done.emit()

@@ -1,4 +1,4 @@
-from .constants import COMPATIBLE, MODEL_FIELDS, BASIC_OPTION, EXTRA_OPTION
+from .constants import MODEL_FIELDS, BASIC_OPTION, EXTRA_OPTION
 import logging
 
 logger = logging.getLogger('dict2Anki.noteManager')
@@ -6,8 +6,8 @@ try:
     from aqt import mw
     import anki
 except ImportError:
-    from test.mock_model import mw
-    from test.mock_model import anki
+    from test.dummy_aqt import mw
+    from test import dummy_anki as anki
 
 
 def getDeckList():
@@ -44,15 +44,16 @@ def getOrCreateDeck(deckName):
 
 def getOrCreateModel(modelName):
     model = mw.col.models.byName(modelName)
-    if (not COMPATIBLE) or (not model):
+    if model:
+        return model
+    else:
         logger.info(f'创建新模版:{modelName}')
-        model = mw.col.models.new(modelName)
-        mw.col.models.add(model)
+        newModel = mw.col.models.new(modelName)
+        mw.col.models.add(newModel)
         for field in MODEL_FIELDS:
-            mw.col.models.addField(model, mw.col.models.newField(field))
-        mw.col.models.update(model)
-
-    return model
+            mw.col.models.addField(newModel, mw.col.models.newField(field))
+        mw.col.models.update(newModel)
+        return newModel
 
 
 def getOrCreateModelCardTemplate(modelObject, cardTemplateName):
@@ -111,21 +112,24 @@ def addNoteToDeck(deckObject, modelObject, currentConfig: dict, oneQueryResult: 
     for configName in BASIC_OPTION + EXTRA_OPTION:
         logger.debug(f'字段:{configName}--结果:{oneQueryResult.get(configName)}')
         if oneQueryResult.get(configName):
+            # 短语例句
             if configName in ['sentence', 'phrase'] and currentConfig[configName]:
                 newNote[f'{configName}Front'] = '\n'.join([f'<li>{e}</li>' for e, _ in oneQueryResult[configName]])
                 newNote[f'{configName}Back'] = '\n'.join([f'<li>{e}<br>{c}</li>' for e, c in oneQueryResult[configName]])
+            # 图片
             elif configName == 'image':
                 newNote[configName] = f'src="{oneQueryResult[configName]}"'
+            # 释义
             elif configName == 'definition' and currentConfig[configName]:
                 newNote[configName] = '<br>'.join(oneQueryResult[configName])
+            # 发音
+            elif configName in EXTRA_OPTION[:2]:
+                newNote[configName] = f"[sound:{configName}_{oneQueryResult['term']}.mp3]"
+            # 其他
             elif currentConfig[configName]:
                 newNote[configName] = oneQueryResult[configName]
 
     mw.col.addNote(newNote)
     mw.col.reset()
     mw.reset()
-
-
-def compatTransform():
-    """解决上一版本兼容问题"""
-    pass
+    logger.info(f"添加笔记{newNote['term']}")

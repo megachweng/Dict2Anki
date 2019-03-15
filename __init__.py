@@ -1,4 +1,3 @@
-
 try:
     from aqt import mw
     from .addon.addonWindow import Windows
@@ -15,11 +14,12 @@ try:
     mw.form.menuTools.addAction(action)
 
 except ImportError:
+    import os
     from PyQt5.QtWidgets import QApplication
     from addon.addonWindow import Windows
     import sys
-
-    app = QApplication(sys.argv)
-    window = Windows()
-    window.show()
-    sys.exit(app.exec())
+    if os.environ.get('dict2anki-dev'):
+        app = QApplication(sys.argv)
+        window = Windows()
+        window.show()
+        sys.exit(app.exec())

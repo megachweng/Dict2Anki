@@ -26,8 +26,8 @@
       <attribute name="title">
        <string>同步</string>
       </attribute>
-      <layout class="QGridLayout" name="main_tab_layout">
-       <item row="5" column="3">
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="4" column="4">
         <widget class="QPushButton" name="syncBtn">
          <property name="enabled">
           <bool>false</bool>
@@ -49,83 +49,7 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="0" colspan="4">
-        <layout class="QHBoxLayout" name="dictionaryLayout">
-         <item>
-          <widget class="QLabel" name="dictionaryLabel">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>词典</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="dictionaryComboBox">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="2" column="0" colspan="4">
-        <layout class="QHBoxLayout" name="apiLayout">
-         <item>
-          <widget class="QLabel" name="apiLabel">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>查询</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="apiComboBox">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="5" column="1">
-        <widget class="QPushButton" name="queryBtn">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>100</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>查询</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0" colspan="4">
+       <item row="0" column="0" colspan="5">
         <layout class="QHBoxLayout" name="deckLayout">
          <item>
           <widget class="QLabel" name="deckLabel">
@@ -155,7 +79,113 @@
          </item>
         </layout>
        </item>
-       <item row="5" column="0">
+       <item row="3" column="0" colspan="5">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <property name="spacing">
+            <number>2</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>新单词</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QListWidget" name="newWordListWidget">
+             <property name="alternatingRowColors">
+              <bool>true</bool>
+             </property>
+             <property name="selectionMode">
+              <enum>QAbstractItemView::MultiSelection</enum>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <property name="spacing">
+            <number>2</number>
+           </property>
+           <property name="sizeConstraint">
+            <enum>QLayout::SetDefaultConstraint</enum>
+           </property>
+           <item>
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string>待删除</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QListWidget" name="needDeleteWordListWidget">
+             <property name="alternatingRowColors">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item row="2" column="0" colspan="5">
+        <layout class="QHBoxLayout" name="apiLayout">
+         <item>
+          <widget class="QLabel" name="apiLabel">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>查询</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="apiComboBox">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="1" column="0" colspan="5">
+        <layout class="QHBoxLayout" name="dictionaryLayout">
+         <item>
+          <widget class="QLabel" name="dictionaryLabel">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>词典</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="dictionaryComboBox">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="4" column="0">
         <widget class="QPushButton" name="pullRemoteWordsBtn">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
@@ -174,22 +204,27 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="0" colspan="4">
-        <layout class="QHBoxLayout" name="groupLayout" stretch="0">
-         <property name="sizeConstraint">
-          <enum>QLayout::SetNoConstraint</enum>
+       <item row="4" column="1">
+        <widget class="QPushButton" name="queryBtn">
+         <property name="enabled">
+          <bool>false</bool>
          </property>
-         <item>
-          <widget class="QListWidget" name="wordListWidget">
-           <property name="alternatingRowColors">
-            <bool>true</bool>
-           </property>
-           <property name="selectionMode">
-            <enum>QAbstractItemView::MultiSelection</enum>
-           </property>
-          </widget>
-         </item>
-        </layout>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>查询</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -373,6 +408,12 @@
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="placeholderText">
+             <string>选填</string>
+            </property>
+            <property name="clearButtonEnabled">
+             <bool>true</bool>
             </property>
            </widget>
           </item>

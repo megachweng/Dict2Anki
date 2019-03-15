@@ -1,7 +1,8 @@
 <RCC>
   <qresource prefix="icons">
+    <file>delete.png</file>
+    <file>done.png</file>
     <file>failed.png</file>
     <file>wait.png</file>
-    <file>done.png</file>
   </qresource>
 </RCC>
