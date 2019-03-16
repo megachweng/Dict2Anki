@@ -1,0 +1,6 @@
+beautifulsoup4==4.7.1
+PyQt5==5.9.2
+pytest==4.3.1
+pytest-mock==1.10.1
+pytest-qt==3.2.2
+requests==2.21.0

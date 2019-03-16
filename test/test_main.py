@@ -1,16 +1,9 @@
-from copy import deepcopy
-from unittest import mock
-
 import pytest
-
 from addon.addonWindow import Windows
 from addon.constants import VERSION
 import json
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import Qt
 import sys
-import os
-
 
 
 @pytest.fixture

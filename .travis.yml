@@ -1,0 +1,10 @@
+dist: trusty
+sudo: true
+language: python
+python:
+  - "3.6"
+services:
+  - xvfb
+install:
+  - pip install -r requirements.txt
+script: pytest -s -v
