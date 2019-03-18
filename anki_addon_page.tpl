@@ -1,4 +1,4 @@
-<img src="https://travis-ci.com/megachweng/Dict2Anki.svg?branch=master">
+<img src="https://travis-ci.org/megachweng/Dict2Anki.svg?branch=master">
 <strong>Dict2Anki</strong> 是一款方便<a href="http://cidian.youdao.com/multi.html" rel="nofollow">有道词典</a>、<a href="https://www.eudic.net/" rel="nofollow">欧陆词典</a>用户同步生成单词本卡片至<a href="https://apps.ankiweb.net/#download" rel="nofollow">Anki</a>的插件
 
 <strong>Change Logs</strong>:
