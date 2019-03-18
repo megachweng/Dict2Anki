@@ -20,7 +20,7 @@
 
 <strong>How to use</strong>:
 同步
-<img src = "https://raw.githubusercontent.com/megachweng/Dict2Anki/master/screenshot/sync.gif">
+<img src = "https://raw.githubusercontent.com/megachweng/Dict2Anki/master/screenshots/sync.gif">
 
 同步删除
-<img src = "https://raw.githubusercontent.com/megachweng/Dict2Anki/master/screenshot/del.gif">
+<img src = "https://raw.githubusercontent.com/megachweng/Dict2Anki/master/screenshots/del.gif">

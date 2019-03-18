@@ -20,10 +20,10 @@ Anki --> 工具 --> 附加组件 --> 获取插件
 插件代码：1284759083
 ### How to use
 同步
-<img src = "https://raw.githubusercontent.com/megachweng/Dict2Anki/master/screenshot/sync.gif"></span>
+<img src = "https://raw.githubusercontent.com/megachweng/Dict2Anki/master/screenshots/sync.gif"></span>
 
 同步删除
-<img src = "https://raw.githubusercontent.com/megachweng/Dict2Anki/master/screenshot/del.gif"></span>
+<img src = "https://raw.githubusercontent.com/megachweng/Dict2Anki/master/screenshots/del.gif"></span>
 
 ### Contribute Guide
 非常欢迎你的贡献，请PR前确保通过了全部单元测试 `pytest test`
