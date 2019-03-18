@@ -1,4 +1,6 @@
 import pytest
+from PyQt5.QtCore import Qt
+
 from addon.addonWindow import Windows
 from addon.constants import VERSION
 import json
@@ -61,7 +63,6 @@ def test_start_up_with_fresh_config(qtbot, mocker, fresh_config):
     assert w.workerThread.isRunning()
     mocked_getConfig.assert_called()
     assert w.usernameLineEdit.text() == w.passwordLineEdit.text() == w.cookieLineEdit.text() == ''
-    assert w.tabWidget.currentIndex() == 1
 
 
 def test_version_check(qtbot, mocker, monkeypatch):
@@ -108,6 +109,54 @@ def test_get_deck_list(qtbot, fresh_config, mocker):
     ['a', 'b', 'c', 'd'],
     []
 ])
-def test_query_word(window, words):
+def test_newWordWidget(window, words):
     window.insertWordToListWidget(words)
     assert [window.newWordListWidget.item(row).text() for row in range(window.newWordListWidget.count())] == words
+    assert all(window.newWordListWidget.item(row).data(Qt.UserRole) is None for row in range(window.newWordListWidget.count()))
+
+
+@pytest.mark.parametrize('local_words,remote_words,test_index', [
+    ([], [], 0),
+    ([], ['a', 'b'], 1),
+    (['a'], ['a'], 2),
+    (['a'], ['a', 'b'], 3),
+    (['a', 'b'], ['c', 'd'], 4),
+    (['a', 'b'], ['c', 'b'], 5),
+])
+def test_fetch_word_and_compare(monkeypatch, mocker, window, qtbot, local_words, remote_words, test_index):
+    mocker.patch('addon.dictionary.eudict.Eudict.getWordsByPage', return_value=remote_words)
+    mocker.patch('addon.dictionary.eudict.Eudict.getTotalPage', return_value=1)
+    mocker.patch('addon.addonWindow.getWordsByDeck', return_value=local_words)
+    mocked_tooltip = mocker.patch('addon.addonWindow.tooltip')
+    from addon.dictionary.eudict import Eudict
+    window.selectedDict = Eudict
+    window.selectedDict.groups = [('group_1', 'group_1_id')]
+    qtbot.waitUntil(window.workerThread.isRunning, timeout=5000)
+    window.getRemoteWordList(['group_1'])
+    qtbot.wait(1000)
+    item_in_list_widget = [window.newWordListWidget.item(row) for row in range(window.newWordListWidget.count())]
+    item_in_del_widget = [window.needDeleteWordListWidget.item(row) for row in range(window.needDeleteWordListWidget.count())]
+    words_in_list_widget = [i.text() for i in item_in_list_widget]
+    words_in_del_widget = [i.text() for i in item_in_del_widget]
+
+    assert all([item.data(Qt.UserRole) is None for item in item_in_list_widget])
+    if test_index == 0:
+        assert item_in_list_widget == []
+        assert item_in_del_widget == []
+        assert mocked_tooltip.called_with('无需同步')
+    elif test_index == 1:
+        assert sorted(words_in_list_widget) == sorted(remote_words)
+        assert item_in_del_widget == []
+    elif test_index == 2:
+        assert item_in_list_widget == []
+        assert item_in_del_widget == []
+        assert mocked_tooltip.called_with('无需同步')
+    elif test_index == 3:
+        assert words_in_list_widget == ['b']
+        assert item_in_del_widget == []
+    elif test_index == 4:
+        assert sorted(words_in_list_widget) == sorted(remote_words)
+        assert sorted(words_in_del_widget) == sorted(local_words)
+    elif test_index == 5:
+        assert words_in_list_widget == ['c']
+        assert words_in_del_widget == ['a']

@@ -6,3 +6,9 @@ class Note:
     @staticmethod
     def model():
         return dict()
+
+    def __getitem__(self, item):
+        pass
+
+    def __setitem__(self, key, value):
+        pass

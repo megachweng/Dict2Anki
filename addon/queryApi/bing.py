@@ -1,10 +1,10 @@
-from urllib.parse import urlencode
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3 import Retry
-import logging
 import string
-
+import logging
+import requests
+from urllib3 import Retry
+from urllib.parse import urlencode
+from requests.adapters import HTTPAdapter
+from ..misc import AbstractQueryAPI
 logger = logging.getLogger('dict2Anki.queryApi.bing')
 __all__ = ['API']
 
@@ -65,7 +65,7 @@ class Parser:
         }
 
 
-class API:
+class API(AbstractQueryAPI):
     name = '必应 API'
     timeout = 10
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'}
@@ -82,6 +82,7 @@ class API:
         query_result = None
         try:
             rsp = cls.session.get(cls.url, params=urlencode({'Word': word.translate(validator)}), timeout=cls.timeout)
+            logger.debug(f'code:{rsp.status_code}- word:{word} text:{rsp.text}')
             query_result = cls.parser(rsp.json(), word).result
         except Exception as e:
             logger.exception(e)

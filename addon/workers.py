@@ -1,15 +1,12 @@
-import logging
-import time
-from itertools import chain
-import requests
 import json
-from PyQt5.QtCore import QObject, pyqtSignal, QThread
-from .misc import ThreadPool
-
-from requests.adapters import HTTPAdapter
+import logging
+import requests
 from urllib3 import Retry
-
+from itertools import chain
+from .misc import ThreadPool
+from requests.adapters import HTTPAdapter
 from .constants import VERSION, VERSION_CHECK_API
+from PyQt5.QtCore import QObject, pyqtSignal, QThread
 
 
 class VersionCheckWorker(QObject):
@@ -149,7 +146,7 @@ class AudioDownloadWorker(QObject):
                 if currentThread.isInterruptionRequested():
                     return
                 r = self.session.get(url, stream=True)
-                with open(f'{fileName}.mp3', 'wb') as f:
+                with open(fileName, 'wb') as f:
                     for chunk in r.iter_content(chunk_size=1024):
                         if chunk:
                             f.write(chunk)
@@ -161,5 +158,5 @@ class AudioDownloadWorker(QObject):
 
         with ThreadPool(max_workers=3) as executor:
             for fileName, url in self.audios:
-                executor.submit(__download, url, fileName)
+                executor.submit(__download, fileName, url)
         self.done.emit()

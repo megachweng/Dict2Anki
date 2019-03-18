@@ -2,9 +2,31 @@ dist: trusty
 sudo: true
 language: python
 python:
-  - "3.6"
+  - '3.6'
 services:
   - xvfb
 install:
   - pip install -r requirements.txt
-script: pytest -s -v
+  - export PYTHONPATH=$TRAVIS_BUILD_DIR
+script: xvfb-run --server-args="-screen 0 1024x768x24" pytest -v
+env:
+  global:
+    - ANKI_ADDON_ID: 1284759083
+    - secure: ZtwnARLqggwl5aoQIPl8gdE3Y8CkRjSFKkdDtjC+hLqKu3YB5+2JfxqjImID1jFSVjOsAGLtWu1GZpAz93V/lQDiiZdAAVeAbTIBOXXB27Vkl9vsZKHXrC5AYCdc0pRxLswduXjUSCbv32N+JSQZe/GIkEdeiqb72LOTFYjlh99RS3jbYEg4YMq5Ovgj20YRY1vLRS6/0/+iZiVrJZE3alo67+zyI0UkUGZ1k6rp5fhqZA5pKfzURets73L71/FPF2aOJB6SaXAbyWQDdi0uRs8uNGsHYtUNzEQ2OHJjrzp6Ai7g97V905be8dxgVYPPGoQdYBLGhaCicCegjlSsmEjzLbYOlyOF7PVtLUiF/gr7OVLijlNr1HBpbfaSnXzbZ9tdWu6hXxPKnD2sLzjadM+nLLg7Sw2GuSGo5rCr8lTq0G3hoOLadyy5TBHkh0d1X23htuD5B1r24X1Jds7uUyHguUlRP//F2Zl0f4D8rul/2SwKQjQb9QS5gl7DE7/mmN2HmPnIdSVq0iD8HqI1POfAw4O9P6jTcFgOnwnGarE/3ylc++vbvMS5qxsJ3vxs0Yli4F7mT444fU/QG2nAG+8Qfxh6CLmDgpsczJptpaP5ve/bGcr8oNvMYMi3KkX31O/KGoY7BmRFSKRSLX1qDqbu6jIdGdO9a4vcAlcmRDo=
+    - secure: TxUc+x+HMq7kJKSkpmqciKIW2hf58WHhXStfWvTiScPK+cFGEpYM0rjAPWPM9JLoTcWPsIZIQrfggNLLorFXuALiqrvXw5RJvYIzPv8/sfigdW0OjZqDPLWFun8a34Xa0EGhrqO4Q0UXQodHV+LkDnNozdoofwBkTAAuc4XGxgNga2usDARCnQ8AnxkUJs5Uz+Y605Qk42PzxRh5CLT9QNPyCPa9MMpBl9S9pMmG/4f/1HN7U+aOv908TuWYUx3JwB2j7in/cqXdRvnYHp6RwWth+IC1tXY0maxWXbJ85V9k2sjkRnaDUUwD1KHiDWxtiDsDPtshJyA+S1jMbCETRuueqCTL3JK8rEKx+5FYfrzL7Am/gbJ5Jbg/ESSGiSuf4NOyEkwxM1xTjOnepZd0DN0IQd1ZSWQME+QTPkoBD5i/1hLZz70cpGJLdTIH5NaqW7JcDwhZRVF/q++1JmI1TZxwhbw87vTlTAWODWvHKliETQLer1lONeABvD7x2FVGpG7gFxBBmAeEmPC7mz4XjFJ04YC24LDSP5aEZJVke8LdiyNN4tMsEVyncessh0njYNFfzXlexxdHp7VUkCAbSQyM6Sj65+ELZFvLUvFSOuRtcMfZFgQik6yl7ypbkO/9wu00PUa8T3vZlpOCmieJgfsGHSw8SYuE+zpiv5J8tcM=
+
+deploy:
+  - provider: script
+    script: python deploy.py
+    on:
+      branch: master
+
+  - provider: releases
+    api_key:
+      secure: C/vG8WnZoh6evEepgmEFhyHKzFSN1+DCv9cph5yQu4/Q8YscNRryjkUjZJYJQUBKHMOckpPojnZdy+T6w5VqV8FaV1Jm+MfLHs8Fv81jksh6bGox+7wRSef7WhBU+uzu8hwJ6sCJqKEooe5weLTf1zMVY6dlbR1aBdBQcz5wsHYWq5rEueLM91OYuBLqnwKpvL2Sc25NeDXTgfXZk8MQepMMDusTCJGdC196UZAck05vfgFuisqWHpaUdrKEt/PpFrGRtbqrWZGQyG2DImFzUEJmB7aUGPfwNtRYKZOEGEKjPy+HVg6U/UW6qSIKy4cHWSk1JoaweM8zN1ijCWW0fs7GfiRsegGdly2FmVXS1gacqcFCYLgm2cX8kUMocLd946I0u0DhATD6JmAYsfr6EclJsuKLGTIfGycfHUplwZr3MW2X6kMX1DPz2+Fft2Hypx3wj/kkKmnDb4g5+pwTB1lQKXKoQ4xn0ehcF2yWejr3UT3UWgMY9Uk0wiBPW+u/p7nS+ZhdViufeWpyPJxTOC0P/P85YMyavROI6NHrPFJj0d6a/Y/J94tbE9OMP9tw++UmIhcUifjJuRVvfM4QbMdivJ+G2F4p+A7ru0KxGBPb4VsgquWWQ+v50G4S1wAj2OMy27424PgiLvNI9Ak0hKkg5KRYzVXFCxWIA4PKNKo=
+    file_glob: true
+    file: Dict2Anki-*.zip
+    skip_cleanup: true
+    draft: true
+    on:
+      branch: master

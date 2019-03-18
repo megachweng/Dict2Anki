@@ -1,15 +1,15 @@
-import hashlib
 import re
+import hashlib
+import logging
 import requests
 from bs4 import BeautifulSoup
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
-import logging
-
+from ..misc import AbstractDictionary
 logger = logging.getLogger('dict2Anki.dictionary.youdao')
 
 
-class Youdao:
+class Youdao(AbstractDictionary):
     name = '有道词典'
     timeout = 10
     headers = {
@@ -47,11 +47,11 @@ class Youdao:
         rsp = requests.get('http://dict.youdao.com/wordbook/wordlist', cookies=cookie, headers=self.headers)
         if 'account.youdao.com/login' not in rsp.url:
             self.indexSoup = BeautifulSoup(rsp.text, features="html.parser")
-            logger.info(f'Cookie有效({cookie})')
+            logger.info('Cookie有效')
             cookiesJar = requests.utils.cookiejar_from_dict(cookie, cookiejar=None, overwrite=True)
             self.session.cookies = cookiesJar
             return True
-        logger.info(f'Cookie失效({cookie})')
+        logger.info('Cookie失效')
         return False
 
     def _login(self, username: str, password: str) -> dict:
@@ -77,10 +77,10 @@ class Youdao:
                 #  登陆后获取单词本首页的soup对象
                 rsp = self.session.get('http://dict.youdao.com/wordbook/wordlist', timeout=self.timeout)
                 self.indexSoup = BeautifulSoup(rsp.text, features="html.parser")
-                logger.info(f'登陆成功:{cookie}')
+                logger.info('登陆成功')
                 return cookie
             else:
-                logger.error(f'登陆失败:{cookie}')
+                logger.error('登陆失败')
                 return {}
         except Exception as error:
             logger.exception(f'网络异常:{error}')
@@ -145,7 +145,7 @@ class Youdao:
             logger.info(f'获取单词本(f{groupName}-{groupId})第:{pageNo + 1}页')
             rsp = self.session.get(
                 'http://dict.youdao.com/wordbook/wordlist',
-                params={'p': pageNo, 'tag': groupId},
+                params={'p': pageNo, 'tags': groupId},
             )
             soup = BeautifulSoup(rsp.text, features='html.parser')
             table = soup.find(id='wordlist').table.tbody

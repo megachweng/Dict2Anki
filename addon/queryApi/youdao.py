@@ -1,9 +1,9 @@
-from urllib.parse import urlencode
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3 import Retry
 import logging
-
+import requests
+from urllib3 import Retry
+from urllib.parse import urlencode
+from requests.adapters import HTTPAdapter
+from ..misc import AbstractQueryAPI
 logger = logging.getLogger('dict2Anki.queryApi.youdao')
 __all__ = ['API']
 
@@ -117,7 +117,7 @@ class Parser:
         }
 
 
-class API:
+class API(AbstractQueryAPI):
     name = '有道 API'
     timeout = 10
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'}
@@ -134,6 +134,7 @@ class API:
         queryResult = None
         try:
             rsp = cls.session.get(cls.url, params=urlencode(dict(cls.params, **{'q': word})), timeout=cls.timeout)
+            logger.debug(f'code:{rsp.status_code}- word:{word} text:{rsp.text}')
             queryResult = cls.parser(rsp.json(), word).result
         except Exception as e:
             logger.exception(e)

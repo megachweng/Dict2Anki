@@ -1,8 +1,39 @@
+import logging
 from queue import Queue
 from threading import Thread
-import logging
+from abc import ABC, abstractmethod
 
 logger = logging.getLogger('dict2Anki.misc')
+
+
+class AbstractDictionary(ABC):
+    @abstractmethod
+    def login(self, username: str, password: str, cookie: dict = None) -> dict:
+        pass
+
+    @abstractmethod
+    def getGroups(self) -> [(str, int)]:
+        pass
+
+    @abstractmethod
+    def getTotalPage(self, groupName: str, groupId: int) -> int:
+        pass
+
+    @abstractmethod
+    def getWordsByPage(self, pageNo: int, groupName: str, groupId: str) -> [str]:
+        pass
+
+
+class AbstractQueryAPI(ABC):
+    @classmethod
+    @abstractmethod
+    def query(cls, word) -> dict:
+        """
+        查询
+        :param word: 单词
+        :return: 查询结果 dict(term, definition, phrase, image, sentence, BrEPhonetic, AmEPhonetic, BrEPron, AmEPron)
+        """
+        pass
 
 
 class Mask:
@@ -60,5 +91,3 @@ class ThreadPool:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.wait_complete()
-
-

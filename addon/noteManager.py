@@ -63,28 +63,40 @@ def getOrCreateModelCardTemplate(modelObject, cardTemplateName):
         return
     cardTemplate = mw.col.models.newTemplate(cardTemplateName)
     cardTemplate['qfmt'] = '''
-        <h class='term'>{{term}}</h>
-        <image {{image}} height='60'>
-        <div>
-            <span class='phonetic'>BrE: {{BrEPhonetic}}</span>
-            <span class='phonetic'>AmE: {{BrEPhonetic}}</span>
-        </div>
-        <div>{{phraseFront}}</div>
-        <div>{{sentenceFront}}</div>
+        <table>
+            <tr>
+                <td><h1 class="term">{{term}}</h1><br><div> 英 [{{BrEPhonetic}}] 美 [{{AmEPhonetic}}]</div></div></td>
+                <td><img {{image}} height="120px"></td>
+            </tr>
+        </table>
+        <hr>
+        释义：
+        <div>Tap to View</div>
+        <hr>
+        短语：
+        <table>{{phraseFront}}</table>
+        <hr>
+        例句：
+        <table>{{sentenceFront}}</table>
         {{BrEPron}}
         {{AmEPron}}
     '''
     cardTemplate['afmt'] = '''
-        <h class='term'>{{term}}</h>
-        <image {{image}} height='60'>
-        <div>
-            <span class='phonetic'>BrE: {{BrEPhonetic}}</span>
-            <span class='phonetic'>AmE: {{BrEPhonetic}}</span>
-        </div>
-        <div>{{phraseBack}}</div>
-        <div>{{sentenceBack}}</div>
-        {{BrEPron}}
-        {{AmEPron}}
+        <table>
+            <tr>
+                <td><h1 class="term">{{term}}</h1><br><div> 英 [{{BrEPhonetic}}] 美 [{{AmEPhonetic}}]</div></div></td>
+                <td><img {{image}} height="120px"></td>
+            </tr>
+        </table>
+        <hr>
+        释义：
+        <div>{{definition}}</div>
+        <hr>
+        短语：
+        <table>{{phraseBack}}</table>
+        <hr>
+        例句：
+        <table>{{sentenceBack}}</table>
     '''
     modelObject['css'] = '''
         .card {
@@ -97,14 +109,14 @@ def getOrCreateModelCardTemplate(modelObject, cardTemplateName):
         .term {
             font-size : 35px;
         }
-        .phonetic {
-            margin-right:1em;
-        }
     '''
     mw.col.models.addTemplate(modelObject, cardTemplate)
 
 
 def addNoteToDeck(deckObject, modelObject, currentConfig: dict, oneQueryResult: dict):
+    if not oneQueryResult:
+        logger.warning(f'查询结果{oneQueryResult} 异常，忽略')
+        return
     modelObject['did'] = deckObject['id']
 
     newNote = anki.notes.Note(mw.col, modelObject)
@@ -114,14 +126,14 @@ def addNoteToDeck(deckObject, modelObject, currentConfig: dict, oneQueryResult: 
         if oneQueryResult.get(configName):
             # 短语例句
             if configName in ['sentence', 'phrase'] and currentConfig[configName]:
-                newNote[f'{configName}Front'] = '\n'.join([f'<li>{e.strip()}</li>' for e, _ in oneQueryResult[configName]])
-                newNote[f'{configName}Back'] = '\n'.join([f'<li>{e.strip()}<br>{c.strip()}</li>' for e, c in oneQueryResult[configName]])
+                newNote[f'{configName}Front'] = '\n'.join([f'<tr><td>{e.strip()}</td></tr>' for e, _ in oneQueryResult[configName]])
+                newNote[f'{configName}Back'] = '\n'.join([f'<tr><td>{e.strip()}<br>{c.strip()}</td></tr>' for e, c in oneQueryResult[configName]])
             # 图片
             elif configName == 'image':
                 newNote[configName] = f'src="{oneQueryResult[configName]}"'
             # 释义
             elif configName == 'definition' and currentConfig[configName]:
-                newNote[configName] = '<br>'.join(oneQueryResult[configName])
+                newNote[configName] = ' '.join(oneQueryResult[configName])
             # 发音
             elif configName in EXTRA_OPTION[:2]:
                 newNote[configName] = f"[sound:{configName}_{oneQueryResult['term']}.mp3]"
@@ -131,5 +143,4 @@ def addNoteToDeck(deckObject, modelObject, currentConfig: dict, oneQueryResult: 
 
     mw.col.addNote(newNote)
     mw.col.reset()
-    mw.reset()
     logger.info(f"添加笔记{newNote['term']}")

@@ -1,15 +1,16 @@
 import time
+import logging
 import requests
 from math import ceil
 from bs4 import BeautifulSoup
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
-import logging
+from ..misc import AbstractDictionary
 
 logger = logging.getLogger('dict2Anki.dictionary.eudict')
 
 
-class Eudict:
+class Eudict(AbstractDictionary):
     name = '欧陆词典'
     timeout = 10
     headers = {
@@ -24,6 +25,13 @@ class Eudict:
         self.groups = []
 
     def login(self, username: str, password: str, cookie: dict = None) -> dict:
+        """
+        登陆
+        :param username: 用户名
+        :param password: 密码
+        :param cookie: cookie
+        :return: 登陆成功的cookie
+        """
         self.session.cookies.clear()
         if cookie and self._checkCookie(cookie):
             return cookie
@@ -34,16 +42,16 @@ class Eudict:
         """
         cookie有效性检验
         :param cookie:
-        :return:
+        :return: Boolean cookie是否有效
         """
         rsp = requests.get('https://my.eudic.net/studylist', cookies=cookie, headers=self.headers)
         if 'dict.eudic.net/account/login' not in rsp.url:
             self.indexSoup = BeautifulSoup(rsp.text, features="html.parser")
-            logger.info(f'Cookie有效({cookie})')
+            logger.info('Cookie有效')
             cookiesJar = requests.utils.cookiejar_from_dict(cookie, cookiejar=None, overwrite=True)
             self.session.cookies = cookiesJar
             return True
-        logger.info(f'Cookie失效({cookie})')
+        logger.info('Cookie失效')
         return False
 
     def _login(self, username: str, password: str) -> dict:
@@ -64,10 +72,10 @@ class Eudict:
             cookie = requests.utils.dict_from_cookiejar(self.session.cookies)
             if 'EudicWeb' in cookie.keys():
                 self.indexSoup = BeautifulSoup(rsp.text, features="html.parser")
-                logger.error(f'登陆成功:{cookie}')
+                logger.info(f'登陆成功')
                 return cookie
             else:
-                logger.error(f'登陆失败:{cookie}')
+                logger.error(f'登陆失败')
                 return {}
         except Exception as error:
             logger.exception(f'网络异常:{error}')
