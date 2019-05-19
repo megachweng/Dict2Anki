@@ -1,5 +1,6 @@
+urllib3
 beautifulsoup4==4.7.1
-PyQt5==5.9.2
+PyQt5>=5.9.2
 pytest==4.3.1
 pytest-mock==1.10.1
 pytest-qt==3.2.2

@@ -33,29 +33,10 @@ class VersionCheckWorker(QObject):
             self.finished.emit()
 
 
-class LoginWorker(QObject):
-    start = pyqtSignal()
-    logSuccess = pyqtSignal(str)
-    logFailed = pyqtSignal()
-
-    def __init__(self, LoginFunc, *args, **kwargs):
-        super().__init__()
-        self.LoginFunc = LoginFunc
-        self.args = args
-        self.kwargs = kwargs
-
-    def run(self):
-        cookie = self.LoginFunc(*self.args, **self.kwargs)
-        if cookie:
-            self.logSuccess.emit(json.dumps(cookie))
-        else:
-            self.logFailed.emit()
-
-
 class RemoteWordFetchingWorker(QObject):
     start = pyqtSignal()
     tick = pyqtSignal()
-    setProgress = pyqtSignal(int)
+    setTotal = pyqtSignal(int)
     done = pyqtSignal()
     doneThisGroup = pyqtSignal(list)
     logger = logging.getLogger('dict2Anki.workers.RemoteWordFetchingWorker')
@@ -68,19 +49,19 @@ class RemoteWordFetchingWorker(QObject):
     def run(self):
         currentThread = QThread.currentThread()
 
-        def _pull(*args):
+        def _pull(pageNo: int, groupName: str, groupId: str):
             if currentThread.isInterruptionRequested():
                 return
-            wordPerPage = self.selectedDict.getWordsByPage(*args)
+            wordPerPage = self.selectedDict.getWordsPerPage(pageNo=pageNo, groupName=groupName, groupId=groupId)
             self.tick.emit()
             return wordPerPage
 
-        for groupName, groupId in self.selectedGroups:
-            totalPage = self.selectedDict.getTotalPage(groupName, groupId)
-            self.setProgress.emit(totalPage)
+        for name, gid in self.selectedGroups:
+            totalPage = self.selectedDict.getTotalPage(name, gid)
+            self.setTotal.emit(totalPage)
             with ThreadPool(max_workers=3) as executor:
-                for i in range(totalPage):
-                    executor.submit(_pull, i, groupName, groupId)
+                for page in range(totalPage):
+                    executor.submit(_pull, page, name, gid)
             remoteWordList = list(chain(*[ft for ft in executor.result]))
             self.doneThisGroup.emit(remoteWordList)
 
@@ -95,31 +76,31 @@ class QueryWorker(QObject):
     allQueryDone = pyqtSignal()
     logger = logging.getLogger('dict2Anki.workers.QueryWorker')
 
-    def __init__(self, wordList: [dict], api):
+    def __init__(self, wordBundleList: [(int, str)], api):
         super().__init__()
-        self.wordList = wordList
+        self.wordBundleList = wordBundleList
         self.api = api
 
     def run(self):
         currentThread = QThread.currentThread()
 
-        def _query(word, row):
+        def _query(row, term):
             if currentThread.isInterruptionRequested():
                 return
-            queryResult = self.api.query(word)
+            queryResult = self.api.query(term)
             if queryResult:
-                self.logger.info(f'查询成功: {word} -- {queryResult}')
+                self.logger.info(f'查询成功: {term} -- {queryResult}')
                 self.thisRowDone.emit(row, queryResult)
             else:
-                self.logger.warning(f'查询失败: {word}')
+                self.logger.warning(f'查询失败: {term}')
                 self.thisRowFailed.emit(row)
 
             self.tick.emit()
             return queryResult
 
         with ThreadPool(max_workers=3) as executor:
-            for word in self.wordList:
-                executor.submit(_query, word['term'], word['row'])
+            for wordBundle in self.wordBundleList:
+                executor.submit(_query, *wordBundle)
 
         self.allQueryDone.emit()
 

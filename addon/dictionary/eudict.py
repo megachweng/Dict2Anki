@@ -1,18 +1,21 @@
-import time
 import logging
-import requests
+import time
 from math import ceil
+
+import requests
 from bs4 import BeautifulSoup
-from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
-from ..misc import AbstractDictionary
+from urllib3 import Retry
 
-logger = logging.getLogger('dict2Anki.dictionary.eudict')
+from addon.misc import AbstractDictionary
+
+logger = logging.getLogger('Dict2Anki.euDict')
 
 
-class Eudict(AbstractDictionary):
+class EuDict(AbstractDictionary):
     name = '欧陆词典'
-    timeout = 10
+    timeout = 15
+    wordBookUrl = 'https://my.eudic.net/studylist'
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
     }
@@ -20,102 +23,87 @@ class Eudict(AbstractDictionary):
     session = requests.Session()
     session.mount('http://', HTTPAdapter(max_retries=retries))
     session.mount('https://', HTTPAdapter(max_retries=retries))
+    wordBookIndexSoup = None
+    remoteWords = []
 
-    def __init__(self):
-        self.groups = []
-
-    def login(self, username: str, password: str, cookie: dict = None) -> dict:
-        """
-        登陆
-        :param username: 用户名
-        :param password: 密码
-        :param cookie: cookie
-        :return: 登陆成功的cookie
-        """
-        self.session.cookies.clear()
-        if cookie and self._checkCookie(cookie):
-            return cookie
+    @classmethod
+    def checkLoginState(cls, cookie=None, content=None, first_login=False) -> bool:
+        if first_login:
+            logger.info('首次登录')
+            isLogin = 'EudicWeb' in cookie
+            cls.setData(cookie, content)
         else:
-            return self._login(username, password)
+            logger.info('非首次登录')
+            isLogin = cls._checkCookie(cookie)
+        logger.debug(f'Cookie: {cookie}')
+        logger.debug(f'Content: {content}')
+        logging.info('已登录' if isLogin else '未登录')
+        return isLogin
 
-    def _checkCookie(self, cookie: dict) -> bool:
-        """
-        cookie有效性检验
-        :param cookie:
-        :return: Boolean cookie是否有效
-        """
-        rsp = requests.get('https://my.eudic.net/studylist', cookies=cookie, headers=self.headers)
-        if 'dict.eudic.net/account/login' not in rsp.url:
-            self.indexSoup = BeautifulSoup(rsp.text, features="html.parser")
-            logger.info('Cookie有效')
-            cookiesJar = requests.utils.cookiejar_from_dict(cookie, cookiejar=None, overwrite=True)
-            self.session.cookies = cookiesJar
+    @classmethod
+    def _checkCookie(cls, cookie):
+        cls.session.cookies = requests.utils.cookiejar_from_dict(cookie, cookiejar=None, overwrite=True)
+        rsp = cls.session.get(cls.wordBookUrl)
+        if rsp.url.startswith(cls.wordBookUrl):
+            cls.setData(cookie, rsp.text)
             return True
-        logger.info('Cookie失效')
         return False
 
-    def _login(self, username: str, password: str) -> dict:
-        """账号和密码登陆"""
-        data = {
-            "UserName": username,
-            "Password": password,
-            "returnUrl": "http://my.eudic.net/studylist",
-            "RememberMe": 'true'
-        }
-        try:
-            rsp = self.session.post(
-                url='https://dict.eudic.net/Account/Login?returnUrl=https://my.eudic.net/studylist',
-                timeout=self.timeout,
-                headers=self.headers,
-                data=data
-            )
-            cookie = requests.utils.dict_from_cookiejar(self.session.cookies)
-            if 'EudicWeb' in cookie.keys():
-                self.indexSoup = BeautifulSoup(rsp.text, features="html.parser")
-                logger.info(f'登陆成功')
-                return cookie
-            else:
-                logger.error(f'登陆失败')
-                return {}
-        except Exception as error:
-            logger.exception(f'网络异常:{error}')
-            return {}
+    @classmethod
+    def setData(cls, cookie, content):
+        cls.session.cookies = requests.utils.cookiejar_from_dict(cookie, cookiejar=None, overwrite=True)
+        cls.wordBookIndexSoup = BeautifulSoup(content, features='html.parser')
 
-    def getGroups(self) -> [(str, int)]:
+    @classmethod
+    def getWordGroup(cls) -> [(str, int)]:
         """
         获取单词本分组
         :return: [(group_name,group_id)]
         """
-        elements = self.indexSoup.find_all('a', class_='media_heading_a new_cateitem_click')
         groups = []
-        if elements:
-            groups = [(el.string, el['data-id']) for el in elements]
+        try:
+            elements = cls.wordBookIndexSoup.find_all('a', class_='media_heading_a new_cateitem_click')
+        except AttributeError:
+            logger.warning('解析失败')
+        else:
+            if elements:
+                groups = [(el.string, el['data-id']) for el in elements]
+        finally:
+            return groups
 
-        logger.info(f'单词本分组:{groups}')
-        self.groups = groups
-
-    def getTotalPage(self, groupName: str, groupId: int) -> int:
+    @classmethod
+    def getTotalPage(cls, groupName: str, groupId: str) -> int:
         """
         获取分组下总页数
         :param groupName: 分组名称
         :param groupId:分组id
         :return:
         """
+        totalPages = 0
         try:
-            r = self.session.get(
+            r = cls.session.get(
                 url='https://my.eudic.net/StudyList/WordsDataSource',
-                timeout=self.timeout,
+                timeout=cls.timeout,
                 data={'categoryid': groupId}
             )
             records = r.json()['recordsTotal']
             totalPages = ceil(records / 100)
-            logger.info(f'该分组({groupName}-{groupId})下共有{totalPages}页')
-            return totalPages
+
         except Exception as error:
             logger.exception(f'网络异常{error}')
-            return 0
+        finally:
+            logger.info(f'该分组({groupName}-{groupId})下共有{totalPages}页')
+            return totalPages
 
-    def getWordsByPage(self, pageNo: int, groupName: str, groupId: int) -> [str]:
+    @classmethod
+    def getWordsPerPage(cls, pageNo: int, groupName: str, groupId: str) -> [str]:
+        """
+        获取分组下每一页的单词
+        :param pageNo: 页数
+        :param groupName: 分组名
+        :param groupId: 分组id
+        :return:
+        """
         wordList = []
         data = {
             'columns[2][data]': 'word',
@@ -126,9 +114,9 @@ class Eudict(AbstractDictionary):
         }
         try:
             logger.info(f'获取单词本(f{groupName}-{groupId})第:{pageNo + 1}页')
-            r = self.session.get(
+            r = cls.session.get(
                 url='https://my.eudic.net/StudyList/WordsDataSource',
-                timeout=self.timeout,
+                timeout=cls.timeout,
                 data=data
             )
             wl = r.json()
@@ -136,5 +124,6 @@ class Eudict(AbstractDictionary):
         except Exception as error:
             logger.exception(f'网络异常{error}')
         finally:
-            logger.info(wordList)
+            logger.info(f'{groupName}分组下，第{pageNo + 1}页单词:{wordList}')
+            cls.remoteWords += wordList
             return wordList

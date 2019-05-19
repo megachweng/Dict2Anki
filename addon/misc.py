@@ -7,20 +7,29 @@ logger = logging.getLogger('dict2Anki.misc')
 
 
 class AbstractDictionary(ABC):
+    @classmethod
     @abstractmethod
-    def login(self, username: str, password: str, cookie: dict = None) -> dict:
+    def checkLoginState(cls, cookie=None, content=None, first_login=False) -> bool:
         pass
 
+    @classmethod
     @abstractmethod
-    def getGroups(self) -> [(str, int)]:
+    def setData(cls, cookie, content):
         pass
 
+    @classmethod
     @abstractmethod
-    def getTotalPage(self, groupName: str, groupId: int) -> int:
+    def getWordGroup(cls) -> [(str, int)]:
         pass
 
+    @classmethod
     @abstractmethod
-    def getWordsByPage(self, pageNo: int, groupName: str, groupId: str) -> [str]:
+    def getTotalPage(cls, groupName: str, groupId: str) -> int:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def getWordsPerPage(cls, pageNo: int, groupName: str, groupId: str) -> [str]:
         pass
 
 

@@ -1,3 +1,4 @@
-from . import eudict, youdao
+from .youdao import YoudaoDict
+from .eudict import EuDict
 
-dictionaries = (eudict.Eudict, youdao.Youdao,)
+registered_dictionaries = [YoudaoDict, EuDict]

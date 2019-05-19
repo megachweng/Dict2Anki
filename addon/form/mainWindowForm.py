@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'main_ui.ui'
+# Form implementation generated from reading ui file 'mainWindowForm.ui'
 #
-# Created by: PyQt5 UI code generator 5.9.2
+# Created by: PyQt5 UI code generator 5.12.1
 #
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+
 
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
@@ -184,43 +185,6 @@ class Ui_Dialog(object):
         self.credentialGroupBox.setObjectName("credentialGroupBox")
         self.gridLayout_3 = QtWidgets.QGridLayout(self.credentialGroupBox)
         self.gridLayout_3.setObjectName("gridLayout_3")
-        self.currentDictionaryLabel = QtWidgets.QLabel(self.credentialGroupBox)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.currentDictionaryLabel.sizePolicy().hasHeightForWidth())
-        self.currentDictionaryLabel.setSizePolicy(sizePolicy)
-        self.currentDictionaryLabel.setObjectName("currentDictionaryLabel")
-        self.gridLayout_3.addWidget(self.currentDictionaryLabel, 0, 0, 1, 2)
-        self.usernameLabel = QtWidgets.QLabel(self.credentialGroupBox)
-        self.usernameLabel.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
-        self.usernameLabel.setObjectName("usernameLabel")
-        self.gridLayout_3.addWidget(self.usernameLabel, 1, 0, 1, 1)
-        self.usernameLineEdit = QtWidgets.QLineEdit(self.credentialGroupBox)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.usernameLineEdit.sizePolicy().hasHeightForWidth())
-        self.usernameLineEdit.setSizePolicy(sizePolicy)
-        self.usernameLineEdit.setObjectName("usernameLineEdit")
-        self.gridLayout_3.addWidget(self.usernameLineEdit, 1, 1, 1, 1)
-        self.passwordLabel = QtWidgets.QLabel(self.credentialGroupBox)
-        self.passwordLabel.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
-        self.passwordLabel.setObjectName("passwordLabel")
-        self.gridLayout_3.addWidget(self.passwordLabel, 2, 0, 1, 1)
-        self.passwordLineEdit = QtWidgets.QLineEdit(self.credentialGroupBox)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.passwordLineEdit.sizePolicy().hasHeightForWidth())
-        self.passwordLineEdit.setSizePolicy(sizePolicy)
-        self.passwordLineEdit.setEchoMode(QtWidgets.QLineEdit.PasswordEchoOnEdit)
-        self.passwordLineEdit.setObjectName("passwordLineEdit")
-        self.gridLayout_3.addWidget(self.passwordLineEdit, 2, 1, 1, 1)
-        self.cookieLabel = QtWidgets.QLabel(self.credentialGroupBox)
-        self.cookieLabel.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
-        self.cookieLabel.setObjectName("cookieLabel")
-        self.gridLayout_3.addWidget(self.cookieLabel, 3, 0, 1, 1)
         self.cookieLineEdit = QtWidgets.QLineEdit(self.credentialGroupBox)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -229,7 +193,21 @@ class Ui_Dialog(object):
         self.cookieLineEdit.setSizePolicy(sizePolicy)
         self.cookieLineEdit.setClearButtonEnabled(True)
         self.cookieLineEdit.setObjectName("cookieLineEdit")
-        self.gridLayout_3.addWidget(self.cookieLineEdit, 3, 1, 1, 1)
+        self.gridLayout_3.addWidget(self.cookieLineEdit, 1, 1, 1, 1)
+        self.cookieLabel = QtWidgets.QLabel(self.credentialGroupBox)
+        self.cookieLabel.setLayoutDirection(QtCore.Qt.LeftToRight)
+        self.cookieLabel.setAlignment(QtCore.Qt.AlignJustify|QtCore.Qt.AlignVCenter)
+        self.cookieLabel.setObjectName("cookieLabel")
+        self.gridLayout_3.addWidget(self.cookieLabel, 1, 0, 1, 1)
+        self.currentDictionaryLabel = QtWidgets.QLabel(self.credentialGroupBox)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.currentDictionaryLabel.sizePolicy().hasHeightForWidth())
+        self.currentDictionaryLabel.setSizePolicy(sizePolicy)
+        self.currentDictionaryLabel.setText("")
+        self.currentDictionaryLabel.setObjectName("currentDictionaryLabel")
+        self.gridLayout_3.addWidget(self.currentDictionaryLabel, 0, 0, 1, 2)
         self.gridLayout_2.addWidget(self.credentialGroupBox, 0, 0, 1, 2)
         self.tabWidget.addTab(self.settingTab, "")
         self.logTab = QtWidgets.QWidget()
@@ -243,7 +221,7 @@ class Ui_Dialog(object):
         self.main_layout.addWidget(self.progressBar)
 
         self.retranslateUi(Dialog)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
     def retranslateUi(self, Dialog):
@@ -269,11 +247,9 @@ class Ui_Dialog(object):
         self.AmEPhoneticCheckBox.setText(_translate("Dialog", "美式英标"))
         self.imageCheckBox.setText(_translate("Dialog", "图片"))
         self.credentialGroupBox.setTitle(_translate("Dialog", "账号设置"))
-        self.currentDictionaryLabel.setText(_translate("Dialog", "当前选择词典: "))
-        self.usernameLabel.setText(_translate("Dialog", "账号"))
-        self.passwordLabel.setText(_translate("Dialog", "密码"))
-        self.cookieLabel.setText(_translate("Dialog", "Cookie"))
         self.cookieLineEdit.setPlaceholderText(_translate("Dialog", "选填"))
+        self.cookieLabel.setText(_translate("Dialog", "Cookie:"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.settingTab), _translate("Dialog", "设置"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.logTab), _translate("Dialog", "日志"))
+
 

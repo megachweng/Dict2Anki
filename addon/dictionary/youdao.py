@@ -1,17 +1,18 @@
-import re
-import hashlib
 import logging
-import requests
+import re
+
 from bs4 import BeautifulSoup
-from urllib3.util.retry import Retry
+import requests
 from requests.adapters import HTTPAdapter
-from ..misc import AbstractDictionary
-logger = logging.getLogger('dict2Anki.dictionary.youdao')
+from urllib3 import Retry
+
+logger = logging.getLogger('Dict2Anki.youdaoDict')
 
 
-class Youdao(AbstractDictionary):
+class YoudaoDict:
     name = '有道词典'
-    timeout = 10
+    timeout = 15
+    wordBookUrl = 'http://dict.youdao.com/wordbook/wordlist'
     headers = {
         'Host': 'dict.youdao.com',
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
@@ -20,88 +21,57 @@ class Youdao(AbstractDictionary):
     session = requests.Session()
     session.mount('http://', HTTPAdapter(max_retries=retries))
     session.mount('https://', HTTPAdapter(max_retries=retries))
+    wordBookIndexSoup = None
+    remoteWords = []
 
-    def __init__(self):
-        self.groups = []
-
-    def login(self, username: str, password: str, cookie: dict = None) -> dict:
-        """
-        登陆
-        :param username: 用户名
-        :param password: 密码
-        :param cookie: cookie
-        :return: cookie dict
-        """
-        self.session.cookies.clear()
-        if cookie and self._checkCookie(cookie):
-            return cookie
+    @classmethod
+    def checkLoginState(cls, cookie=None, content=None, first_login=False):
+        if first_login:
+            logger.info('首次登录')
+            isLogin = 'DICT_SESS' in cookie
+            cls.setData(cookie, content)
         else:
-            return self._login(username, password)
+            logger.info('非首次登录')
+            isLogin = cls._checkCookie(cookie)
+        logger.debug(f'Cookie: {cookie}')
+        logger.debug(f'Content: {content}')
+        logging.info('已登录' if isLogin else '未登录')
+        return isLogin
 
-    def _checkCookie(self, cookie) -> bool:
-        """
-        cookie有效性检验
-        :param cookie:
-        :return: bool
-        """
-        rsp = requests.get('http://dict.youdao.com/wordbook/wordlist', cookies=cookie, headers=self.headers)
-        if 'account.youdao.com/login' not in rsp.url:
-            self.indexSoup = BeautifulSoup(rsp.text, features="html.parser")
-            logger.info('Cookie有效')
-            cookiesJar = requests.utils.cookiejar_from_dict(cookie, cookiejar=None, overwrite=True)
-            self.session.cookies = cookiesJar
+    @classmethod
+    def _checkCookie(cls, cookie):
+        cls.session.cookies = requests.utils.cookiejar_from_dict(cookie, cookiejar=None, overwrite=True)
+        rsp = cls.session.get(cls.wordBookUrl)
+        if rsp.url.startswith(cls.wordBookUrl):
+            cls.setData(cookie, rsp.text)
             return True
-        logger.info('Cookie失效')
         return False
 
-    def _login(self, username: str, password: str) -> dict:
-        """账号和密码登陆"""
-        data = (('app', 'mobile'),
-                ('product', 'DICT'),
-                ('tp', 'urstoken'),
-                ('cf', '7'),
-                ('show', 'true'),
-                ('format', 'json'),
-                ('username', username),
-                ('password', hashlib.md5(password.encode('utf-8')).hexdigest()),
-                ('um', 'true'),)
-        try:
-            self.session.post(
-                url='https://dict.youdao.com/login/acc/login',
-                timeout=self.timeout,
-                headers=self.headers,
-                data=data
-            )
-            cookie = requests.utils.dict_from_cookiejar(self.session.cookies)
-            if username and username.lower() in cookie.get('DICT_SESS', ''):
-                #  登陆后获取单词本首页的soup对象
-                rsp = self.session.get('http://dict.youdao.com/wordbook/wordlist', timeout=self.timeout)
-                self.indexSoup = BeautifulSoup(rsp.text, features="html.parser")
-                logger.info('登陆成功')
-                return cookie
-            else:
-                logger.error('登陆失败')
-                return {}
-        except Exception as error:
-            logger.exception(f'网络异常:{error}')
-            return {}
+    @classmethod
+    def setData(cls, cookie: dict, content: str):
+        cls.session.cookies = requests.utils.cookiejar_from_dict(cookie, cookiejar=None, overwrite=True)
+        cls.wordBookIndexSoup = BeautifulSoup(content, features='html.parser')
 
-    def getGroups(self) -> [(str, int)]:
+    @classmethod
+    def getWordGroup(cls) -> [(str, int)]:
         """
         获取单词本分组
         :return: [(group_name,group_id)]
         """
-        elements = self.indexSoup.find('select', id='select_category')
         groups = []
-        if elements:
-            groups = elements.find_all('option')
-            groups = [(e.text, e['value']) for e in groups]
-        logger.info(f'单词本分组:{groups}')
-        self.groups = groups
+        try:
+            elements = cls.wordBookIndexSoup.find('select', id='select_category')
+        except AttributeError:
+            pass
+        else:
+            if elements:
+                groups = elements.find_all('option')
+                groups = [(e.text, e['value']) for e in groups]
+        finally:
+            return groups
 
-        return groups
-
-    def getTotalPage(self, groupName: str, groupId: int) -> int:
+    @classmethod
+    def getTotalPage(cls, groupName: str, groupId: str) -> int:
         """
         获取分组下总页数
         :param groupName: 分组名称
@@ -110,9 +80,9 @@ class Youdao(AbstractDictionary):
         """
         totalPages = 1
         try:
-            r = self.session.get(
+            r = cls.session.get(
                 url='http://dict.youdao.com/wordbook/wordlist',
-                timeout=self.timeout,
+                timeout=cls.timeout,
                 params={'tags': groupId}
             )
             soup = BeautifulSoup(r.text, features='html.parser')
@@ -125,14 +95,15 @@ class Youdao(AbstractDictionary):
             else:
                 totalPages = 1
         except Exception as error:
-            logger.exception(f'网络异常{error}')
+            logger.exception(f'网络异常:{error}')
 
         finally:
             totalPages = totalPages - 1 if totalPages > 1 else totalPages
             logger.info(f'该分组({groupName}-{groupId})下共有{totalPages}页')
             return totalPages
 
-    def getWordsByPage(self, pageNo: int, groupName: str, groupId: str) -> [str]:
+    @classmethod
+    def getWordsPerPage(cls, pageNo: int, groupName: str, groupId: str) -> [str]:
         """
         获取分组下每一页的单词
         :param pageNo: 页数
@@ -143,7 +114,7 @@ class Youdao(AbstractDictionary):
         wordList = []
         try:
             logger.info(f'获取单词本(f{groupName}-{groupId})第:{pageNo + 1}页')
-            rsp = self.session.get(
+            rsp = cls.session.get(
                 'http://dict.youdao.com/wordbook/wordlist',
                 params={'p': pageNo, 'tags': groupId},
             )
@@ -154,7 +125,8 @@ class Youdao(AbstractDictionary):
                 cols = row.find_all('td')
                 wordList.append(cols[1].div.a.text.strip())
         except Exception as e:
-            logger.exception(f'网络异常{e}')
+            logger.exception(f'网络异常:{e}')
         finally:
-            logger.info(wordList)
+            logger.info(f'{groupName}分组下，第{pageNo + 1}页单词:{wordList}')
+            cls.remoteWords += wordList
             return wordList

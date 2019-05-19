@@ -3,9 +3,9 @@ import requests
 from urllib3 import Retry
 from urllib.parse import urlencode
 from requests.adapters import HTTPAdapter
-from ..misc import AbstractQueryAPI
+
 logger = logging.getLogger('dict2Anki.queryApi.youdao')
-__all__ = ['API']
+__all__ = ['YoudaoAPI']
 
 
 class Parser:
@@ -58,22 +58,22 @@ class Parser:
         return pron
 
     @property
-    def BrEPhonetic(self)->str:
+    def BrEPhonetic(self) -> str:
         """英式音标"""
         return self.pronunciations['BrEPhonetic']
 
     @property
-    def AmEPhonetic(self)->str:
+    def AmEPhonetic(self) -> str:
         """美式音标"""
         return self.pronunciations['AmEPhonetic']
 
     @property
-    def BrEPron(self)->str:
+    def BrEPron(self) -> str:
         """英式发音url"""
         return self.pronunciations['BrEUrl']
 
     @property
-    def AmEPron(self)->str:
+    def AmEPron(self) -> str:
         """美式发音url"""
         return self.pronunciations['AmEUrl']
 
@@ -85,11 +85,11 @@ class Parser:
             return []
 
     @property
-    def image(self)->str:
+    def image(self) -> str:
         try:
             return [i['image'] for i in self._result['pic_dict']['pic']][0]
         except (KeyError, IndexError):
-            return None
+            return ''
 
     @property
     def phrase(self) -> list:
@@ -117,7 +117,7 @@ class Parser:
         }
 
 
-class API(AbstractQueryAPI):
+class YoudaoAPI:
     name = '有道 API'
     timeout = 10
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'}

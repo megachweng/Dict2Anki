@@ -4,9 +4,10 @@ import requests
 from urllib3 import Retry
 from urllib.parse import urlencode
 from requests.adapters import HTTPAdapter
-from ..misc import AbstractQueryAPI
+from addon.misc import AbstractQueryAPI
+
 logger = logging.getLogger('dict2Anki.queryApi.bing')
-__all__ = ['API']
+__all__ = ['BingAPI']
 
 
 class Parser:
@@ -16,6 +17,7 @@ class Parser:
 
     @property
     def definition(self) -> list:
+        """释义"""
         return [''.join([d.get('pos', ''), d.get('def', '')]) for d in self._result.get('defs') or []]
 
     @property
@@ -44,18 +46,20 @@ class Parser:
 
     @property
     def sentence(self) -> list:
+        """例句"""
         return [(s.get('eng'), s.get('chn'),) for s in self._result.get('sams') or []]
 
     @property
-    def image(self) -> None:
-        return None
+    def image(self) -> str:
+        """图片"""
+        return ''
 
     @property
     def result(self) -> dict:
         return {
             'term': self.term,
             'definition': self.definition,
-            'phrase': None,
+            'phrase': [],
             'image': self.image,
             'sentence': self.sentence,
             'BrEPhonetic': self.BrEPhonetic,
@@ -65,8 +69,8 @@ class Parser:
         }
 
 
-class API(AbstractQueryAPI):
-    name = '必应 API'
+class BingAPI(AbstractQueryAPI):
+    name = '必应API'
     timeout = 10
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'}
     retries = Retry(total=5, backoff_factor=3, status_forcelist=[500, 502, 503, 504])

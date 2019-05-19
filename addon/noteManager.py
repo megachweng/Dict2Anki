@@ -1,13 +1,11 @@
-from .constants import MODEL_FIELDS, BASIC_OPTION, EXTRA_OPTION
+import json
+
+import anki
+from aqt import mw
+from .constants import MODEL_FIELDS
 import logging
 
 logger = logging.getLogger('dict2Anki.noteManager')
-try:
-    from aqt import mw
-    import anki
-except ImportError:
-    from test.dummy_aqt import mw
-    from test import dummy_anki as anki
 
 
 def getDeckList():
@@ -19,8 +17,8 @@ def getWordsByDeck(deckName) -> [str]:
     words = []
     for nid in notes:
         note = mw.col.getNote(nid)
-        if note.model().get('name', '').lower().startswith('dict2anki') and note['term']:
-            words.append(note['term'])
+        if note.model().get('name', '').lower().startswith('dict2anki'):
+            words += note.get('term', [])
     return words
 
 
@@ -62,42 +60,131 @@ def getOrCreateModelCardTemplate(modelObject, cardTemplateName):
     if cardTemplateName in [t.get('name') for t in existingCardTemplate]:
         return
     cardTemplate = mw.col.models.newTemplate(cardTemplateName)
+
     cardTemplate['qfmt'] = '''
-        <table>
-            <tr>
-                <td><h1 class="term">{{term}}</h1><br><div> 英 [{{BrEPhonetic}}] 美 [{{AmEPhonetic}}]</div></div></td>
-                <td><img {{image}} height="120px"></td>
-            </tr>
-        </table>
-        <hr>
-        释义：
-        <div>Tap to View</div>
-        <hr>
-        短语：
-        <table>{{phraseFront}}</table>
-        <hr>
-        例句：
-        <table>{{sentenceFront}}</table>
-        {{BrEPron}}
-        {{AmEPron}}
+    <div>
+    <img id='image' style="max-height: 140px" src="">
+    <h1 id="term">{{term}}</h1>
+    <div class="section">
+    <span class="pron"><span style="color: #777">美</span> <span id="AmEPhonetic"></span></span>
+    <span class="pron"><span style="color: #777">英</span> <span id="BrEPhonetic"></span></span>
+    </div>
+    <div id='definitionSection' class="section" style="clear: left">
+    <ul id="definitionList"></ul>
+    </div>
+    </div>
+
+    <div class="section clear" style="width: 100%">
+    <hr>
+    </div>
+    
+    <div class="section clear">
+    <ul id="phraseList"></ul>
+    </div>
+
+    <hr>
+    
+    <div class="section clear">
+    <ul id="sentenceList"></ul>
+    </div>
+    {{Pron}}
+
+    
+    <data id="jsonString" style="display: none">{{content}}</data>
+    <script>
+        var jsonString = document.getElementById('jsonString').innerText
+        var queryResult = JSON.parse(jsonString)
+        document.getElementById('AmEPhonetic').innerText = '[' + queryResult.AmEPhonetic + ']'
+        document.getElementById('BrEPhonetic').innerText = '[' + queryResult.BrEPhonetic + ']'
+        var phraseUl = document.getElementById('phraseList')
+        var sentenceUl = document.getElementById('sentenceList')
+        addToUl(phraseUl, queryResult.phrase)
+        addToUl(sentenceUl, queryResult.sentence)
+    
+        function addToUl(whichUl, dataList) {
+            for (var i = 0; i < dataList.length; i++) {
+                var li = document.createElement('li')
+                var pf = document.createElement('p')
+                pf.className = 'front'
+                pf.innerText = dataList[i][0]
+                li.appendChild(pf)
+                whichUl.appendChild(li)
+            }
+        }
+    </script>    
     '''
+
     cardTemplate['afmt'] = '''
-        <table>
-            <tr>
-                <td><h1 class="term">{{term}}</h1><br><div> 英 [{{BrEPhonetic}}] 美 [{{AmEPhonetic}}]</div></div></td>
-                <td><img {{image}} height="120px"></td>
-            </tr>
-        </table>
-        <hr>
-        释义：
-        <div>{{definition}}</div>
-        <hr>
-        短语：
-        <table>{{phraseBack}}</table>
-        <hr>
-        例句：
-        <table>{{sentenceBack}}</table>
+    <div>
+    <img id='image' style="max-height: 140px" src="{{image}}">
+    <h1 id="term">{{term}}</h1>
+    <div class="section">
+    <span class="pron"><span style="color: #777">美</span> <span id="AmEPhonetic"></span></span>
+    <span class="pron"><span style="color: #777">英</span> <span id="BrEPhonetic"></span></span>
+    </div>
+    <div id='definitionSection' class="section" style="clear: left">
+    <ul id="definitionList"></ul>
+    </div>
+    </div>
+
+    <div class="section clear" style="width: 100%">
+    <hr>
+    </div>
+    
+    <div class="section clear">
+    <ul id="phraseList"></ul>
+    </div>
+
+    <hr>
+    
+    <div class="section clear">
+    <ul id="sentenceList"></ul>
+    </div>
+    {{Pron}}
+    
+    <data id="jsonString" style="display: none">{{content}}</data>
+    <script>
+        var jsonString = document.getElementById('jsonString').innerText
+        var queryResult = JSON.parse(jsonString)
+        document.getElementById('AmEPhonetic').innerText = '[' + queryResult.AmEPhonetic + ']'
+        document.getElementById('BrEPhonetic').innerText = '[' + queryResult.BrEPhonetic + ']'
+        imgElement = document.getElementById('image') 
+        if (Boolean(queryResult.image)){
+            imgElement.setAttribute('src', queryResult.image)
+        }else{
+            imgElement.parentNode.removeChild(imgElement)
+        }
+        document.getElementById('image').setAttribute('src', queryResult.image)
+        var definitionUl = document.getElementById('definitionList')
+        for (var i = 0; i < queryResult.definition.length; i++) {
+            var node = document.createElement('li')
+            node.className = 'def'
+            node.innerText = queryResult.definition[i]
+            definitionUl.appendChild(node)
+        }
+        var phraseUl = document.getElementById('phraseList')
+        var sentenceUl = document.getElementById('sentenceList')
+        addToUl(phraseUl, queryResult.phrase)
+        addToUl(sentenceUl, queryResult.sentence)
+    
+        function addToUl(whichUl, dataList) {
+            for (var i = 0; i < dataList.length; i++) {
+                var li = document.createElement('li')
+                var pf = document.createElement('p')
+                var pb = document.createElement('p')
+                pf.className = 'front'
+                pf.innerText = dataList[i][0]
+                pb.className = 'back'
+                pb.innerText = dataList[i][1]
+    
+                li.appendChild(pf)
+                li.appendChild(pb)
+                whichUl.appendChild(li)
+            }
+        }
+    </script>
     '''
+
     modelObject['css'] = '''
         .card {
             font-family: arial;
@@ -106,8 +193,72 @@ def getOrCreateModelCardTemplate(modelObject, cardTemplateName):
             color: black;
             background-color: white;
         }
-        .term {
-            font-size : 35px;
+         #term {
+            padding-bottom: 10px;
+            padding-left: 10px;
+            margin: 0;
+        }
+        .pos {
+            width: 35px;
+            font-size: 93%;
+            background-color: #aaa;
+            color: #fff;
+            line-height: 18px;
+            vertical-align: middle;
+            text-align: center;
+            float: left;
+            font-weight: bold;
+        }
+        .def {
+            line-height: 20px;
+            vertical-align: top;
+            font-size: 14px;
+            color: #333;
+            font-weight: bold;
+        }
+        ul {
+            clear: both;
+            padding-top: 10px;
+            border: 0;
+            border-collapse: collapse;
+            border-spacing: 0;
+            list-style: none;
+            margin: auto;
+            padding: 0;
+        }
+        li {
+            text-align: left;
+            padding-left: 10px;
+            border-left: .25em solid #dfe2e5;
+        }
+        image {
+            display: inline;
+            float: right;
+            clear: both;
+        }
+        .section {
+            margin-top: 10px;
+            float: left;
+        }
+        .clear {
+            clear: both;
+        }
+        .pron {
+            margin-right: 5px;
+            padding-left: 5px;
+            float: left;
+        }
+        .back {
+            /* padding: 10px; */
+            margin-bottom: 20px;
+            margin-top: -15px;
+            color: #777;
+        }
+        hr {
+            clear: left;
+        }
+        p {
+            margin-top: 0px;
         }
     '''
     mw.col.models.addTemplate(modelObject, cardTemplate)
@@ -118,29 +269,32 @@ def addNoteToDeck(deckObject, modelObject, currentConfig: dict, oneQueryResult: 
         logger.warning(f'查询结果{oneQueryResult} 异常，忽略')
         return
     modelObject['did'] = deckObject['id']
-
     newNote = anki.notes.Note(mw.col, modelObject)
-    newNote['term'] = oneQueryResult['term']
-    for configName in BASIC_OPTION + EXTRA_OPTION:
-        logger.debug(f'字段:{configName}--结果:{oneQueryResult.get(configName)}')
-        if oneQueryResult.get(configName):
-            # 短语例句
-            if configName in ['sentence', 'phrase'] and currentConfig[configName]:
-                newNote[f'{configName}Front'] = '\n'.join([f'<tr><td>{e.strip()}</td></tr>' for e, _ in oneQueryResult[configName]])
-                newNote[f'{configName}Back'] = '\n'.join([f'<tr><td>{e.strip()}<br>{c.strip()}</td></tr>' for e, c in oneQueryResult[configName]])
-            # 图片
-            elif configName == 'image':
-                newNote[configName] = f'src="{oneQueryResult[configName]}"'
-            # 释义
-            elif configName == 'definition' and currentConfig[configName]:
-                newNote[configName] = ' '.join(oneQueryResult[configName])
-            # 发音
-            elif configName in EXTRA_OPTION[:2]:
-                newNote[configName] = f"[sound:{configName}_{oneQueryResult['term']}.mp3]"
-            # 其他
-            elif currentConfig[configName]:
-                newNote[configName] = oneQueryResult[configName]
+
+    if not currentConfig['definition']:
+        oneQueryResult['definition'] = []
+
+    if not currentConfig['phrase']:
+        oneQueryResult['phrase'] = []
+
+    if not currentConfig['sentence']:
+        oneQueryResult['sentence'] = []
+
+    if not currentConfig['image']:
+        oneQueryResult['image'] = ''
+
+    if not currentConfig['BrEPhonetic']:
+        oneQueryResult['BrEPhonetic'] = 'None'
+
+    if not currentConfig['AmEPhonetic']:
+        oneQueryResult['AmEPhonetic'] = 'None'
+
+    if not currentConfig['noPron']:
+        newNote['Pron'] = f"[sound:{oneQueryResult.get('term', '')}.mp3]"
+
+    newNote['term'] = oneQueryResult.get('term', '')
+    newNote['content'] = json.dumps(oneQueryResult)
 
     mw.col.addNote(newNote)
     mw.col.reset()
-    logger.info(f"添加笔记{newNote['term']}")
+    logger.info(f"添加笔记{newNote.get('term', '')}")
