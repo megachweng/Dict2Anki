@@ -3,6 +3,7 @@ import requests
 from urllib3 import Retry
 from urllib.parse import urlencode
 from requests.adapters import HTTPAdapter
+from ..misc import AbstractQueryAPI
 
 logger = logging.getLogger('dict2Anki.queryApi.youdao')
 __all__ = ['YoudaoAPI']
@@ -117,7 +118,7 @@ class Parser:
         }
 
 
-class YoudaoAPI:
+class YoudaoAPI(AbstractQueryAPI):
     name = '有道 API'
     timeout = 10
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'}

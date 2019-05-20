@@ -4,7 +4,7 @@ import requests
 from urllib3 import Retry
 from urllib.parse import urlencode
 from requests.adapters import HTTPAdapter
-from addon.misc import AbstractQueryAPI
+from ..misc import AbstractQueryAPI
 
 logger = logging.getLogger('dict2Anki.queryApi.bing')
 __all__ = ['BingAPI']

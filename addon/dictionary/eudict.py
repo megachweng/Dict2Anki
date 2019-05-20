@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
-from addon.misc import AbstractDictionary
+from ..misc import AbstractDictionary
 
 logger = logging.getLogger('Dict2Anki.euDict')
 

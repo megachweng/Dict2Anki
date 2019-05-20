@@ -5,11 +5,12 @@ from bs4 import BeautifulSoup
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
+from ..misc import AbstractDictionary
 
 logger = logging.getLogger('Dict2Anki.youdaoDict')
 
 
-class YoudaoDict:
+class YoudaoDict(AbstractDictionary):
     name = '有道词典'
     timeout = 15
     wordBookUrl = 'http://dict.youdao.com/wordbook/wordlist'
