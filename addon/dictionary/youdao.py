@@ -23,7 +23,6 @@ class YoudaoDict(AbstractDictionary):
     session.mount('http://', HTTPAdapter(max_retries=retries))
     session.mount('https://', HTTPAdapter(max_retries=retries))
     wordBookIndexSoup = None
-    remoteWords = []
 
     @classmethod
     def checkLoginState(cls, cookie=None, content=None, first_login=False):
@@ -129,5 +128,4 @@ class YoudaoDict(AbstractDictionary):
             logger.exception(f'网络异常:{e}')
         finally:
             logger.info(f'{groupName}分组下，第{pageNo + 1}页单词:{wordList}')
-            cls.remoteWords += wordList
             return wordList

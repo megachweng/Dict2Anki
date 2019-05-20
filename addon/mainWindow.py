@@ -39,6 +39,7 @@ class MainWindow(QDialog, mainWindowForm.Ui_Dialog):
         self.selectedDict = None
 
         # self.setupGUIByConfig()
+        self.remoteWordList = []
 
     def setupLogger(self):
         def onDestroyed():
@@ -100,28 +101,42 @@ class MainWindow(QDialog, mainWindowForm.Ui_Dialog):
         wordGroupDialog = WordGroupDialog()
         wordGroup = self.selectedDict.getWordGroup()
         wordGroupDialog.init_data(wordGroup, previousChecked=None)
+
+        def onRejected():
+            self.mainTab.setEnabled(True)
+
+        def onAccepted():
+            logger.info(f'选择单词本:{wordGroupDialog.selectedGroup}')
+            self.newWordListWidget.clear()
+            self.needDeleteWordListWidget.clear()
+            self.getRemoteWordList(wordGroupDialog.selectedGroup)
+
+        wordGroupDialog.buttonBox.accepted.connect(onAccepted)
+        wordGroupDialog.buttonBox.rejected.connect(onRejected)
         wordGroupDialog.exec()
-        logger.info(f'选择单词本:{wordGroupDialog.selectedGroup}')
-        self.getRemoteWordList(wordGroupDialog.selectedGroup)
 
     def getRemoteWordList(self, selectedWordGroup: (str, str)):
         """获取远程单词"""
-        self.newWordListWidget.clear()
-        self.needDeleteWordListWidget.clear()
         self.pullWorker = RemoteWordFetchingWorker(self.selectedDict, selectedWordGroup)
         self.pullWorker.moveToThread(self.workerThread)
         self.pullWorker.start.connect(self.pullWorker.run)
         self.pullWorker.tick.connect(lambda: self.progressBar.setValue(self.progressBar.value() + 1))
         self.pullWorker.setTotal.connect(self.progressBar.setMaximum)
         self.pullWorker.done.connect(self.onAllPullWorkDone)
+        self.pullWorker.doneThisGroup.connect(self.onDoneThisGroup)
         self.pullWorker.start.emit()
+
+    @pyqtSlot(list)
+    def onDoneThisGroup(self, words):
+        self.remoteWordList += words
 
     @pyqtSlot()
     def onAllPullWorkDone(self):
         waitIcon = QIcon(':/icons/wait.png')
         delIcon = QIcon(':/icons/delete.png')
         doneIcon = QIcon(':/icons/done.png')
-        remoteWords = set(self.selectedDict.remoteWords)
+        remoteWords = set(self.remoteWordList)
+        self.remoteWordList = []
         localWords = {'a', 'b', 'c'}
 
         needQueryWords = remoteWords - localWords  # 新单词
