@@ -1,0 +1,58 @@
+<link rel="stylesheet" type="text/css" href="card.css">
+
+<div>
+    <img id='image' style="max-height: 140px">
+    <h1 id="term">{{term}}</h1>
+    <div class="section">
+        <span class="pron"><span style="color: #777">美</span> <span id="AmEPhonetic"></span></span>
+        <span class="pron"><span style="color: #777">英</span> <span id="BrEPhonetic"></span></span>
+    </div>
+    <div id='definitionSection' class="section" style="clear: left">
+        <ul id="definitionList"></ul>
+    </div>
+</div>
+
+<div class="section clear" style="width: 100%">
+    <hr>
+</div>
+
+<div class="section clear">
+    <ul id="phraseList"></ul>
+</div>
+
+<hr>
+
+<div class="section clear">
+    <ul id="sentenceList"></ul>
+</div>
+{{Pron}}
+
+
+<data id="jsonString" style="display: none">{{content}}</data>
+<script>
+    var jsonString = document.getElementById('jsonString').innerText;
+    var queryResult = JSON.parse(jsonString);
+    document.getElementById('AmEPhonetic').innerText = '[' + queryResult.AmEPhonetic + ']';
+    document.getElementById('BrEPhonetic').innerText = '[' + queryResult.BrEPhonetic + ']';
+    imgElement = document.getElementById('image');
+    if (Boolean(queryResult.image)) {
+        imgElement.setAttribute('src', queryResult.image)
+    } else {
+        imgElement.parentNode.removeChild(imgElement)
+    }
+    var phraseUl = document.getElementById('phraseList');
+    var sentenceUl = document.getElementById('sentenceList');
+    addToUl(phraseUl, queryResult.phrase);
+    addToUl(sentenceUl, queryResult.sentence);
+
+    function addToUl(whichUl, dataList) {
+        for (var i = 0; i < dataList.length; i++) {
+            var li = document.createElement('li');
+            var pf = document.createElement('p');
+            pf.className = 'front';
+            pf.innerText = dataList[i][0];
+            li.appendChild(pf);
+            whichUl.appendChild(li)
+        }
+    }
+</script>
