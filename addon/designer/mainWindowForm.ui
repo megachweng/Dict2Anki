@@ -238,68 +238,35 @@
          <property name="title">
           <string>默认设置</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout">
+         <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0">
           <item row="0" column="1">
-           <widget class="QCheckBox" name="sentenceCheckBox">
-            <property name="text">
-             <string>例句</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
+           <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,1">
+            <item>
+             <widget class="QCheckBox" name="sentenceCheckBox">
+              <property name="text">
+               <string>例句</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="sentenceSpinBox">
+              <property name="buttonSymbols">
+               <enum>QAbstractSpinBox::UpDownArrows</enum>
+              </property>
+              <property name="value">
+               <number>3</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
-          <item row="0" column="0">
-           <widget class="QCheckBox" name="definitionCheckBox">
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="imageCheckBox">
             <property name="text">
-             <string>释义</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="2">
-           <widget class="QRadioButton" name="noPronRadioButton">
-            <property name="text">
-             <string>无发音</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QCheckBox" name="phraseCheckBox">
-            <property name="text">
-             <string>短语</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="0">
-           <widget class="QRadioButton" name="BrEPronRadioButton">
-            <property name="text">
-             <string>英式发音</string>
-            </property>
-            <property name="checked">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="1">
-           <widget class="QRadioButton" name="AmEPronRadioButton">
-            <property name="text">
-             <string>美式发音</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QCheckBox" name="BrEPhoneticCheckBox">
-            <property name="text">
-             <string>英式英标</string>
+             <string>图片</string>
             </property>
             <property name="checked">
              <bool>true</bool>
@@ -316,10 +283,85 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QCheckBox" name="imageCheckBox">
+          <item row="0" column="0">
+           <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,1">
+            <item>
+             <widget class="QCheckBox" name="definitionCheckBox">
+              <property name="text">
+               <string>释义</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="definitionSpinBox">
+              <property name="buttonSymbols">
+               <enum>QAbstractSpinBox::UpDownArrows</enum>
+              </property>
+              <property name="value">
+               <number>3</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="0" column="2">
+           <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="0,1">
+            <item>
+             <widget class="QCheckBox" name="phraseCheckBox">
+              <property name="text">
+               <string>短语</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="phraseSpinBox">
+              <property name="value">
+               <number>3</number>
+              </property>
+              <property name="displayIntegerBase">
+               <number>10</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="3" column="1">
+           <widget class="QRadioButton" name="AmEPronRadioButton">
             <property name="text">
-             <string>图片</string>
+             <string>美式发音</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
+           <widget class="QRadioButton" name="noPronRadioButton">
+            <property name="text">
+             <string>无发音</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QRadioButton" name="BrEPronRadioButton">
+            <property name="text">
+             <string>英式发音</string>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QCheckBox" name="BrEPhoneticCheckBox">
+            <property name="text">
+             <string>英式英标</string>
             </property>
             <property name="checked">
              <bool>true</bool>

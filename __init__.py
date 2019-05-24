@@ -1,6 +1,11 @@
+import sys
+
 from aqt import mw
 from .addon.mainWindow import MainWindow
 from PyQt5.QtWidgets import QAction
+import logging
+
+logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
 
 def showWindow():

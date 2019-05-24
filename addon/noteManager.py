@@ -12,13 +12,18 @@ def getDeckList():
     return [deck['name'] for deck in mw.col.decks.all()]
 
 
-def getWordsByDeck(deckName) -> [str]:
+def getWordsByDeck(deckName: str) -> [str]:
     notes = mw.col.findNotes(f'deck:"{deckName}"')
     words = []
+
     for nid in notes:
         note = mw.col.getNote(nid)
         if note.model().get('name', '').lower().startswith('dict2anki'):
-            words += note.get('term', [])
+            try:
+                words.append(note['term'])
+            except (KeyError, AttributeError):
+                pass
+
     return words
 
 
@@ -81,12 +86,16 @@ def addNoteToDeck(deckObject, modelObject, currentConfig: dict, oneQueryResult: 
 
     if not currentConfig['definition']:
         oneQueryResult['definition'] = []
-
+    else:
+        oneQueryResult['definition'] = oneQueryResult['definition'][:currentConfig['definitionCount']]
     if not currentConfig['phrase']:
         oneQueryResult['phrase'] = []
-
+    else:
+        oneQueryResult['phrase'] = oneQueryResult['phrase'][:currentConfig['phraseCount']]
     if not currentConfig['sentence']:
         oneQueryResult['sentence'] = []
+    else:
+        oneQueryResult['sentence'] = oneQueryResult['sentence'][:currentConfig['sentenceCount']]
 
     if not currentConfig['image']:
         oneQueryResult['image'] = ''
@@ -98,11 +107,12 @@ def addNoteToDeck(deckObject, modelObject, currentConfig: dict, oneQueryResult: 
         oneQueryResult['AmEPhonetic'] = 'None'
 
     if not currentConfig['noPron']:
-        newNote['Pron'] = f"[sound:{oneQueryResult.get('term', '')}.mp3]"
+        newNote['Pron'] = f"[sound:Dict2Anki_{oneQueryResult.get('term', '')}.mp3]"
 
-    newNote['term'] = oneQueryResult.get('term', '')
+    term = oneQueryResult.get('term', '')
+    newNote['term'] = term
     newNote['content'] = json.dumps(oneQueryResult)
 
     mw.col.addNote(newNote)
     mw.col.reset()
-    logger.info(f"添加笔记{newNote.get('term', '')}")
+    logger.info(f"添加笔记{term}")

@@ -1,27 +1,26 @@
 {
-  "deck": "",
-  "selectedDict": 0,
-  "selectedGroup": null,
-  "selectedApi": 0,
-  "credential": [
-    {
-      "username": "",
-      "password": "",
-      "cookie": ""
-    },
-    {
-      "username": "",
-      "password": "",
-      "cookie": ""
-    }
-  ],
-  "definition": true,
-  "sentence": true,
-  "image": true,
-  "phrase": true,
-  "AmEPhonetic": true,
-  "BrEPhonetic": true,
-  "BrEPron": false,
-  "AmEPron": false,
-  "noPron": true
+    "deck": "",
+    "selectedDict": 0,
+    "selectedGroup": null,
+    "selectedApi": 0,
+    "credential": [
+        {
+            "cookie": ""
+        },
+        {
+            "cookie": ""
+        }
+    ],
+    "definition": true,
+    "definitionCount": 3,
+    "sentence": true,
+    "sentenceCount": 3,
+    "phrase": true,
+    "phraseCount": 3,
+    "image": true,
+    "AmEPhonetic": true,
+    "BrEPhonetic": true,
+    "BrEPron": false,
+    "AmEPron": false,
+    "noPron": true
 }
