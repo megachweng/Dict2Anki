@@ -9,7 +9,7 @@ try:
         w.exec()
 
 
-    action = QAction("Dick2Anki...", mw)
+    action = QAction("Dict2Anki...", mw)
     action.triggered.connect(showWindow)
     mw.form.menuTools.addAction(action)
 
