@@ -21,6 +21,11 @@ class Parser:
             ec = []
 
         try:
+            ee += [ d['pos'] + d['tr'][0]['l']['i'] for d in self._result['ee']['word']['trs']]
+        except KeyError:
+            ec = []
+
+        try:
             web_trans = [w['value'] for w in self._result['web_trans']['web-translation'][0]['trans']][:3]
         except KeyError:
             web_trans = []
@@ -126,15 +131,20 @@ class API(AbstractQueryAPI):
     session.mount('http://', HTTPAdapter(max_retries=retries))
     session.mount('https://', HTTPAdapter(max_retries=retries))
     url = 'https://dict.youdao.com/jsonapi'
-    params = {"dicts": {"count": 99, "dicts": [["ec", "phrs", "pic_dict"], ["web_trans"], ["fanyi"], ["blng_sents_part"]]}}
+    params = {"dicts": {"count": 99, "dicts": [["ec", "ee", "phrs", "pic_dict"], ["web_trans"], ["fanyi"], ["blng_sents_part"]]}}
     parser = Parser
 
     @classmethod
     def query(cls, word) -> dict:
         queryResult = None
         try:
+            logger.debug(cls.url)
+            logger.debug(dict(cls.params, **{'q': word}))
             rsp = cls.session.get(cls.url, params=urlencode(dict(cls.params, **{'q': word})), timeout=cls.timeout)
             logger.debug(f'code:{rsp.status_code}- word:{word} text:{rsp.text}')
+            logger.debug(f'{rsp.request.headers}')
+            logger.debug(f'{type(rsp.request.body)}')
+            logger.debug(f'{rsp.request.body}')
             queryResult = cls.parser(rsp.json(), word).result
         except Exception as e:
             logger.exception(e)
