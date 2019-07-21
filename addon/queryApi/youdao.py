@@ -23,7 +23,7 @@ class Parser:
         try:
             ee += [ d['pos'] + d['tr'][0]['l']['i'] for d in self._result['ee']['word']['trs']]
         except KeyError:
-            ec = []
+            ee = []
 
         try:
             web_trans = [w['value'] for w in self._result['web_trans']['web-translation'][0]['trans']][:3]
@@ -138,13 +138,8 @@ class API(AbstractQueryAPI):
     def query(cls, word) -> dict:
         queryResult = None
         try:
-            logger.debug(cls.url)
-            logger.debug(dict(cls.params, **{'q': word}))
             rsp = cls.session.get(cls.url, params=urlencode(dict(cls.params, **{'q': word})), timeout=cls.timeout)
             logger.debug(f'code:{rsp.status_code}- word:{word} text:{rsp.text}')
-            logger.debug(f'{rsp.request.headers}')
-            logger.debug(f'{type(rsp.request.body)}')
-            logger.debug(f'{rsp.request.body}')
             queryResult = cls.parser(rsp.json(), word).result
         except Exception as e:
             logger.exception(e)
