@@ -21,9 +21,11 @@ class Parser:
             ec = []
 
         try:
-            ee += [ d['pos'] + d['tr'][0]['l']['i'] for d in self._result['ee']['word']['trs']]
+            ee = [ d['pos'] + d['tr'][0]['l']['i'] for d in self._result['ee']['word']['trs']]
         except KeyError:
             ee = []
+        
+        ec += ee
 
         try:
             web_trans = [w['value'] for w in self._result['web_trans']['web-translation'][0]['trans']][:3]
