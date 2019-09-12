@@ -88,8 +88,8 @@ def test_dictionary_combobox_change(qtbot, index, mocker, fresh_config):
     qtbot.wait(500)
     w.dictionaryComboBox.setCurrentIndex(index)
     assert w.dictionaryComboBox.currentText() in w.currentDictionaryLabel.text()
-    assert w.usernameLineEdit.text() == fresh_config['credential'][index]['username']
-    assert w.passwordLineEdit.text() == fresh_config['credential'][index]['password']
+    # assert w.usernameLineEdit.text() == fresh_config['credential'][index]['username']
+    # assert w.passwordLineEdit.text() == fresh_config['credential'][index]['password']
     assert w.cookieLineEdit.text() == fresh_config['credential'][index]['cookie']
 
 
