@@ -45,15 +45,19 @@ def getOrCreateDeck(deckName):
 def getOrCreateModel(modelName):
     model = mw.col.models.byName(modelName)
     if model:
-        return model
-    else:
-        logger.info(f'创建新模版:{modelName}')
-        newModel = mw.col.models.new(modelName)
-        mw.col.models.add(newModel)
-        for field in MODEL_FIELDS:
-            mw.col.models.addField(newModel, mw.col.models.newField(field))
-        mw.col.models.update(newModel)
-        return newModel
+        if set([f['name'] for f in model['flds']]) == set(MODEL_FIELDS):
+            return model
+        else:
+            logger.warning('模版字段异常，自动删除重建')
+            mw.col.models.rem(model)
+
+    logger.info(f'创建新模版:{modelName}')
+    newModel = mw.col.models.new(modelName)
+    mw.col.models.add(newModel)
+    for field in MODEL_FIELDS:
+        mw.col.models.addField(newModel, mw.col.models.newField(field))
+    mw.col.models.update(newModel)
+    return newModel
 
 
 def getOrCreateModelCardTemplate(modelObject, cardTemplateName):

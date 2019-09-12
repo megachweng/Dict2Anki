@@ -7,8 +7,14 @@ logger = logging.getLogger('dict2Anki.misc')
 
 
 class AbstractDictionary(ABC):
+
+    @staticmethod
     @abstractmethod
-    def login(self, username: str, password: str, cookie: dict = None) -> dict:
+    def loginCheckCallbackFn(cookie: dict, content: str):
+        pass
+
+    @abstractmethod
+    def checkCookie(self, cookie: dict):
         pass
 
     @abstractmethod

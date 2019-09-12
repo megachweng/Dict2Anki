@@ -6,11 +6,13 @@ from bs4 import BeautifulSoup
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 from ..misc import AbstractDictionary
+
 logger = logging.getLogger('dict2Anki.dictionary.youdao')
 
 
 class Youdao(AbstractDictionary):
     name = '有道词典'
+    loginUrl = 'http://account.youdao.com/login?service=dict&back_url=http://dict.youdao.com/wordbook/wordlist%3Fkeyfrom%3Dnull'
     timeout = 10
     headers = {
         'Host': 'dict.youdao.com',
@@ -22,23 +24,10 @@ class Youdao(AbstractDictionary):
     session.mount('https://', HTTPAdapter(max_retries=retries))
 
     def __init__(self):
+        self.indexSoup = None
         self.groups = []
 
-    def login(self, username: str, password: str, cookie: dict = None) -> dict:
-        """
-        登陆
-        :param username: 用户名
-        :param password: 密码
-        :param cookie: cookie
-        :return: cookie dict
-        """
-        self.session.cookies.clear()
-        if cookie and self._checkCookie(cookie):
-            return cookie
-        else:
-            return self._login(username, password)
-
-    def _checkCookie(self, cookie) -> bool:
+    def checkCookie(self, cookie: dict) -> bool:
         """
         cookie有效性检验
         :param cookie:
@@ -54,37 +43,11 @@ class Youdao(AbstractDictionary):
         logger.info('Cookie失效')
         return False
 
-    def _login(self, username: str, password: str) -> dict:
-        """账号和密码登陆"""
-        data = (('app', 'mobile'),
-                ('product', 'DICT'),
-                ('tp', 'urstoken'),
-                ('cf', '7'),
-                ('show', 'true'),
-                ('format', 'json'),
-                ('username', username),
-                ('password', hashlib.md5(password.encode('utf-8')).hexdigest()),
-                ('um', 'true'),)
-        try:
-            self.session.post(
-                url='https://dict.youdao.com/login/acc/login',
-                timeout=self.timeout,
-                headers=self.headers,
-                data=data
-            )
-            cookie = requests.utils.dict_from_cookiejar(self.session.cookies)
-            if username and username.lower() in cookie.get('DICT_SESS', ''):
-                #  登陆后获取单词本首页的soup对象
-                rsp = self.session.get('http://dict.youdao.com/wordbook/wordlist', timeout=self.timeout)
-                self.indexSoup = BeautifulSoup(rsp.text, features="html.parser")
-                logger.info('登陆成功')
-                return cookie
-            else:
-                logger.error('登陆失败')
-                return {}
-        except Exception as error:
-            logger.exception(f'网络异常:{error}')
-            return {}
+    @staticmethod
+    def loginCheckCallbackFn(cookie, content):
+        if 'DICT_SESS' in cookie:
+            return True
+        return False
 
     def getGroups(self) -> [(str, int)]:
         """

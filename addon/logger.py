@@ -11,7 +11,7 @@ class Handler(QObject, logging.Handler):
 
         formatter = Formatter('[%(asctime)s][%(levelname)8s] -- %(message)s - (%(name)s)', '%d/%m/%Y %H:%M:%S')
         self.setFormatter(formatter)
-        self.setLevel(logging.INFO)
+        self.setLevel(logging.DEBUG)
 
     def emit(self, record):
         msg = self.format(record)

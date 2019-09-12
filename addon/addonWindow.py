@@ -9,9 +9,10 @@ from PyQt5.QtCore import pyqtSlot, QThread, Qt
 
 from .queryApi import apis
 from .UIForm import wordGroup, mainUI, icons_rc
-from .workers import LoginWorker, VersionCheckWorker, RemoteWordFetchingWorker, QueryWorker, AudioDownloadWorker
+from .workers import LoginStateCheckWorker, VersionCheckWorker, RemoteWordFetchingWorker, QueryWorker, AudioDownloadWorker
 from .dictionary import dictionaries
 from .logger import Handler
+from .loginDialog import LoginDialog
 from .misc import Mask
 from .constants import BASIC_OPTION, EXTRA_OPTION, MODEL_NAME, RELEASE_URL
 
@@ -130,6 +131,10 @@ class Windows(QDialog, mainUI.Ui_Dialog):
         self.selectedGroups = config['selectedGroup']
 
     def initCore(self):
+        self.usernameLineEdit.hide()
+        self.usernameLabel.hide()
+        self.passwordLabel.hide()
+        self.passwordLineEdit.hide()
         self.dictionaryComboBox.addItems([d.name for d in dictionaries])
         self.apiComboBox.addItems([d.name for d in apis])
         self.deckComboBox.addItems(getDeckList())
@@ -198,8 +203,6 @@ class Windows(QDialog, mainUI.Ui_Dialog):
         """词典候选框改变事件"""
         self.currentDictionaryLabel.setText(f'当前选择词典: {self.dictionaryComboBox.currentText()}')
         config = mw.addonManager.getConfig(__name__)
-        self.usernameLineEdit.setText(config['credential'][index]['username'])
-        self.passwordLineEdit.setText(config['credential'][index]['password'])
         self.cookieLineEdit.setText(config['credential'][index]['cookie'])
 
     @pyqtSlot()
@@ -217,25 +220,33 @@ class Windows(QDialog, mainUI.Ui_Dialog):
         self.selectedDict = dictionaries[currentConfig['selectedDict']]()
 
         # 登陆线程
-        self.loginWorker = LoginWorker(self.selectedDict.login, str(currentConfig['username']), str(currentConfig['password']), json.loads(str(currentConfig['cookie']) or '{}'))
+        self.loginWorker = LoginStateCheckWorker(self.selectedDict.checkCookie, json.loads(self.cookieLineEdit.text() or '{}'))
         self.loginWorker.moveToThread(self.workerThread)
-        self.loginWorker.logSuccess.connect(self.onLogSuccess)
         self.loginWorker.start.connect(self.loginWorker.run)
+        self.loginWorker.logSuccess.connect(self.onLogSuccess)
         self.loginWorker.logFailed.connect(self.onLoginFailed)
         self.loginWorker.start.emit()
 
     @pyqtSlot()
     def onLoginFailed(self):
-        showCritical('登录失败！')
-        self.tabWidget.setCurrentIndex(1)
+        showCritical('第一次登录或cookie失效!请重新登录')
         self.progressBar.setValue(0)
         self.progressBar.setMaximum(1)
         self.mainTab.setEnabled(True)
         self.cookieLineEdit.clear()
+        self.loginDialog = LoginDialog(
+            loginUrl=self.selectedDict.loginUrl,
+            loginCheckCallbackFn=self.selectedDict.loginCheckCallbackFn,
+            parent=self
+        )
+        self.loginDialog.loginSucceed.connect(self.onLogSuccess)
+        self.loginDialog.show()
 
     @pyqtSlot(str)
     def onLogSuccess(self, cookie):
         self.cookieLineEdit.setText(cookie)
+        self.getAndSaveCurrentConfig()
+        self.selectedDict.checkCookie(json.loads(cookie))
         self.selectedDict.getGroups()
 
         container = QDialog(self)
@@ -501,5 +512,3 @@ class Windows(QDialog, mainUI.Ui_Dialog):
 
         if not audiosDownloadTasks:
             tooltip(f'添加{added}个笔记\n删除{deleted}个笔记')
-
-

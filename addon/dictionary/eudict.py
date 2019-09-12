@@ -12,6 +12,7 @@ logger = logging.getLogger('dict2Anki.dictionary.eudict')
 
 class Eudict(AbstractDictionary):
     name = '欧陆词典'
+    loginUrl = 'https://dict.eudic.net/account/login'
     timeout = 10
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
@@ -23,22 +24,9 @@ class Eudict(AbstractDictionary):
 
     def __init__(self):
         self.groups = []
+        self.indexSoup = None
 
-    def login(self, username: str, password: str, cookie: dict = None) -> dict:
-        """
-        登陆
-        :param username: 用户名
-        :param password: 密码
-        :param cookie: cookie
-        :return: 登陆成功的cookie
-        """
-        self.session.cookies.clear()
-        if cookie and self._checkCookie(cookie):
-            return cookie
-        else:
-            return self._login(username, password)
-
-    def _checkCookie(self, cookie: dict) -> bool:
+    def checkCookie(self, cookie: dict) -> bool:
         """
         cookie有效性检验
         :param cookie:
@@ -54,32 +42,11 @@ class Eudict(AbstractDictionary):
         logger.info('Cookie失效')
         return False
 
-    def _login(self, username: str, password: str) -> dict:
-        """账号和密码登陆"""
-        data = {
-            "UserName": username,
-            "Password": password,
-            "returnUrl": "http://my.eudic.net/studylist",
-            "RememberMe": 'true'
-        }
-        try:
-            rsp = self.session.post(
-                url='https://dict.eudic.net/Account/Login?returnUrl=https://my.eudic.net/studylist',
-                timeout=self.timeout,
-                headers=self.headers,
-                data=data
-            )
-            cookie = requests.utils.dict_from_cookiejar(self.session.cookies)
-            if 'EudicWeb' in cookie.keys():
-                self.indexSoup = BeautifulSoup(rsp.text, features="html.parser")
-                logger.info(f'登陆成功')
-                return cookie
-            else:
-                logger.error(f'登陆失败')
-                return {}
-        except Exception as error:
-            logger.exception(f'网络异常:{error}')
-            return {}
+    @staticmethod
+    def loginCheckCallbackFn(cookie, content):
+        if 'EudicWeb' in cookie:
+            return True
+        return False
 
     def getGroups(self) -> [(str, int)]:
         """

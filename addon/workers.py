@@ -33,21 +33,20 @@ class VersionCheckWorker(QObject):
             self.finished.emit()
 
 
-class LoginWorker(QObject):
+class LoginStateCheckWorker(QObject):
     start = pyqtSignal()
     logSuccess = pyqtSignal(str)
     logFailed = pyqtSignal()
 
-    def __init__(self, LoginFunc, *args, **kwargs):
+    def __init__(self, checkFn, cookie):
         super().__init__()
-        self.LoginFunc = LoginFunc
-        self.args = args
-        self.kwargs = kwargs
+        self.checkFn = checkFn
+        self.cookie = cookie
 
     def run(self):
-        cookie = self.LoginFunc(*self.args, **self.kwargs)
-        if cookie:
-            self.logSuccess.emit(json.dumps(cookie))
+        loginState = self.checkFn(self.cookie)
+        if loginState:
+            self.logSuccess.emit(json.dumps(self.cookie))
         else:
             self.logFailed.emit()
 
