@@ -108,7 +108,7 @@ class Parser:
         for el in els:
             try:
                 line = el.select('p')
-                sentence = line[0].get_text(strip=True)
+                sentence = "".join([ str(c) for c in line[0].contents])
                 sentence_translation = line[1].get_text(strip=True)
                 ret.append((sentence, sentence_translation))
             except KeyError as e:
