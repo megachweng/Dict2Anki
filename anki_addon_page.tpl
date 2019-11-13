@@ -2,6 +2,11 @@
 <strong>Dict2Anki</strong> 是一款方便<a href="http://cidian.youdao.com/multi.html" rel="nofollow">有道词典</a>、<a href="https://www.eudic.net/" rel="nofollow">欧陆词典</a>用户同步生成单词本卡片至<a href="https://apps.ankiweb.net/#download" rel="nofollow">Anki</a>的插件
 
 <strong>Change Logs</strong>:
+<strong>v6.1.1</strong>:
+    添加欧陆词典查询API THX to <a href="https://github.com/megachweng/Dict2Anki/pull/73" rel="nofollow">wd</a>
+<strong>v6.1.0</strong>:
+    支持第三方登陆
+    加入模版字段检查
 <strong>v6.0.2</strong>:
     添加英英注释 THX to deluser8
 <strong>v6.0.1</strong>:
