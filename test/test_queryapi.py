@@ -25,7 +25,20 @@ def test_eudict_with_none():
     ret = check_result(res)
     assert set(ret) - set(keys) == set()
 
-def test_eudict_implication_all():
+def test_eudict_implication():
+    # 不包含图片，定义不在正常规则内，包含 trans
     res = api.query('implication')
     ret = check_result(res)
     assert set(ret) - set(['image']) == set()
+
+def test_eudict_epitomize():
+    # 不包含图片，定义不在正常规则内
+    res = api.query('epitomize')
+    ret = check_result(res)
+    assert set(ret) - set(['image', 'phrase']) == set()
+
+def test_eudict_periodical():
+    # 包含图片，定义不在正常规则内
+    res = api.query('periodical')
+    ret = check_result(res)
+    assert set(ret) - set(['image', 'phrase']) == set()
