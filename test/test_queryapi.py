@@ -24,3 +24,8 @@ def test_eudict_with_none():
     res = api.query('asafesdf')
     ret = check_result(res)
     assert set(ret) - set(keys) == set()
+
+def test_eudict_implication_all():
+    res = api.query('implication')
+    ret = check_result(res)
+    assert set(ret) - set(['image']) == set()

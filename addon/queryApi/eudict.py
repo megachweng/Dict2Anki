@@ -17,7 +17,8 @@ class Parser:
 
     @property
     def definition(self) -> list:
-        els = self._soap.select('div #ExpFCChild li')
+        els = self._soap.select('div #ExpFCChild li') # 多词性
+        els = self._soap.select('div #ExpFCChild .exp') if not els else els # 单一词性
         ret = []
         for el in els:
             ret.append(el.get_text(strip=True))
