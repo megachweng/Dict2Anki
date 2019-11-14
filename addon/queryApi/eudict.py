@@ -1,18 +1,17 @@
 import logging
 import requests
 from urllib3 import Retry
-from urllib.parse import urlencode
 from requests.adapters import HTTPAdapter
 from ..misc import AbstractQueryAPI
 from bs4 import BeautifulSoup
-from bs4.element import Comment
+
 logger = logging.getLogger('dict2Anki.queryApi.youdao')
 __all__ = ['API']
 
 
 class Parser:
     def __init__(self, html, term):
-        self._soap= BeautifulSoup(html, 'html.parser')
+        self._soap = BeautifulSoup(html, 'html.parser')
         self.term = term
 
     @property
@@ -68,7 +67,6 @@ class Parser:
             except (TypeError, KeyError):
                 pass
 
-
             try:
                 pron['AmEPhonetic'] = phons[1].get_text(strip=True)
             except KeyError:
@@ -82,22 +80,22 @@ class Parser:
         return pron
 
     @property
-    def BrEPhonetic(self)->str:
+    def BrEPhonetic(self) -> str:
         """英式音标"""
         return self.pronunciations['BrEPhonetic']
 
     @property
-    def AmEPhonetic(self)->str:
+    def AmEPhonetic(self) -> str:
         """美式音标"""
         return self.pronunciations['AmEPhonetic']
 
     @property
-    def BrEPron(self)->str:
+    def BrEPron(self) -> str:
         """英式发音url"""
         return self.pronunciations['BrEUrl']
 
     @property
-    def AmEPron(self)->str:
+    def AmEPron(self) -> str:
         """美式发音url"""
         return self.pronunciations['AmEUrl']
 
@@ -116,7 +114,7 @@ class Parser:
         return ret
 
     @property
-    def image(self)->str:
+    def image(self) -> str:
         els = self._soap.select('div .word-thumbnail-container img')
         ret = None
         if els:
