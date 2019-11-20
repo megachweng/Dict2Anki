@@ -70,7 +70,7 @@ class Parser:
             pass
 
         try:
-            pron['BrEUrl'] = url + links[0]['data-rel']
+            pron['BrEUrl'] = "{}{}".format('' if 'http' in links[0]['data-rel'] else url, links[0]['data-rel'])
         except (TypeError, KeyError, IndexError):
             pass
 
@@ -80,7 +80,7 @@ class Parser:
             pass
 
         try:
-            pron['AmEUrl'] = url + links[1]['data-rel']
+            pron['AmEUrl'] = "{}{}".format('' if 'http' in links[1]['data-rel'] else url, links[1]['data-rel'])
         except (TypeError, KeyError, IndexError):
             pass
 
