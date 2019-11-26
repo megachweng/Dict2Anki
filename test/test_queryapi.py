@@ -52,3 +52,7 @@ def test_eudict_divisional():
     ret = get_missing_fileds_set(res)
     expect = set(['image', 'AmEPhonetic'])
     assert expect == ret
+
+def test_eudict_image_url_without_https():
+    res = api.query('gelatin')
+    assert res['image'][0:8] == 'https://'

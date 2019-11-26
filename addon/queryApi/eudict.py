@@ -13,6 +13,13 @@ class Parser:
         self._soap = BeautifulSoup(html, 'html.parser')
         self.term = term
 
+    @staticmethod
+    def __fix_url(url):
+        if url[0:2] == '//':
+            return 'https:' + url
+        else:
+            return url
+
     @property
     def definition(self) -> list:
         ret = []
@@ -128,7 +135,7 @@ class Parser:
             try:
                 img = els[0]
                 if 'title' not in img.attrs:
-                    ret = img['src']
+                    ret = self.__fix_url(img['src'])
             except KeyError:
                 pass
         return ret
