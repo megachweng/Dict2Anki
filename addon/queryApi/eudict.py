@@ -14,7 +14,7 @@ class Parser:
         self.term = term
 
     @staticmethod
-    def __fix_url(url):
+    def __fix_url_without_http(url):
         if url[0:2] == '//':
             return 'https:' + url
         else:
@@ -135,7 +135,7 @@ class Parser:
             try:
                 img = els[0]
                 if 'title' not in img.attrs:
-                    ret = self.__fix_url(img['src'])
+                    ret = self.__fix_url_without_http(img['src'])
             except KeyError:
                 pass
         return ret
