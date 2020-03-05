@@ -8,6 +8,7 @@ services:
 install:
   - pip install -r requirements.txt
   - export PYTHONPATH=$TRAVIS_BUILD_DIR
+  - export PYTHONDONTWRITEBYTECODE=1
 script: xvfb-run --server-args="-screen 0 1024x768x24" pytest -v
 env:
   global:
