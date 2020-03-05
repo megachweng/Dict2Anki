@@ -1,6 +1,8 @@
 import re
 import hashlib
 import logging
+from math import ceil
+
 import requests
 from bs4 import BeautifulSoup
 from urllib3.util.retry import Retry
@@ -33,8 +35,8 @@ class Youdao(AbstractDictionary):
         :param cookie:
         :return: bool
         """
-        rsp = requests.get('http://dict.youdao.com/wordbook/wordlist', cookies=cookie, headers=self.headers)
-        if 'account.youdao.com/login' not in rsp.url:
+        rsp = requests.get('http://dict.youdao.com/login/acc/query/accountinfo', cookies=cookie, headers=self.headers)
+        if rsp.json()['code'] == 0:
             self.indexSoup = BeautifulSoup(rsp.text, features="html.parser")
             logger.info('Cookie有效')
             cookiesJar = requests.utils.cookiejar_from_dict(cookie, cookiejar=None, overwrite=True)
@@ -54,11 +56,11 @@ class Youdao(AbstractDictionary):
         获取单词本分组
         :return: [(group_name,group_id)]
         """
-        elements = self.indexSoup.find('select', id='select_category')
-        groups = []
-        if elements:
-            groups = elements.find_all('option')
-            groups = [(e.text, e['value']) for e in groups]
+        r = self.session.get(
+            url='http://dict.youdao.com/wordbook/webapi/books',
+            timeout=self.timeout,
+        )
+        groups = [(g['bookName'], g['bookId']) for g in r.json()['data']]
         logger.info(f'单词本分组:{groups}')
         self.groups = groups
 
@@ -71,27 +73,19 @@ class Youdao(AbstractDictionary):
         :param groupId:分组id
         :return:
         """
-        totalPages = 1
         try:
             r = self.session.get(
-                url='http://dict.youdao.com/wordbook/wordlist',
+                url='http://dict.youdao.com/wordbook/webapi/words',
                 timeout=self.timeout,
-                params={'tags': groupId}
+                params={'bookId': groupId, 'limit': 1, 'offset': 0}
             )
-            soup = BeautifulSoup(r.text, features='html.parser')
-            pagination = soup.find('div', id='pagination')
-            if pagination:
-                finalPageHref = pagination.find_all('a', class_='next-page')[-1].get('href')
-                groups = re.search(r"wordlist\?p=(\d*)", finalPageHref)
-                if groups:
-                    totalPages = int(groups.group(1))
-            else:
-                totalPages = 1
+            totalWords = r.json()['data']['total']
+            totalPages = ceil(totalWords / 15)  # 这里按网页默认每页取15个
+
         except Exception as error:
             logger.exception(f'网络异常{error}')
 
-        finally:
-            totalPages = totalPages - 1 if totalPages > 1 else totalPages
+        else:
             logger.info(f'该分组({groupName}-{groupId})下共有{totalPages}页')
             return totalPages
 
@@ -105,17 +99,13 @@ class Youdao(AbstractDictionary):
         """
         wordList = []
         try:
-            logger.info(f'获取单词本(f{groupName}-{groupId})第:{pageNo + 1}页')
-            rsp = self.session.get(
-                'http://dict.youdao.com/wordbook/wordlist',
-                params={'p': pageNo, 'tags': groupId},
+            logger.info(f'获取单词本(f{groupName}-{groupId})第:{pageNo}页')
+            r = self.session.get(
+                'http://dict.youdao.com/wordbook/webapi/words',
+                timeout=self.timeout,
+                params={'bookId': groupId, 'limit': 15, 'offset': pageNo * 15}
             )
-            soup = BeautifulSoup(rsp.text, features='html.parser')
-            table = soup.find(id='wordlist').table.tbody
-            rows = table.find_all('tr')
-            for row in rows:
-                cols = row.find_all('td')
-                wordList.append(cols[1].div.a.text.strip())
+            wordList = [item['word'] for item in r.json()['data']['itemList']]
         except Exception as e:
             logger.exception(f'网络异常{e}')
         finally:
