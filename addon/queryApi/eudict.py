@@ -4,8 +4,7 @@ from urllib3 import Retry
 from requests.adapters import HTTPAdapter
 from ..misc import AbstractQueryAPI
 from bs4 import BeautifulSoup
-
-logger = logging.getLogger('dict2Anki.queryApi.youdao')
+logger = logging.getLogger('dict2Anki.queryApi.eudict')
 __all__ = ['API']
 
 
@@ -13,6 +12,13 @@ class Parser:
     def __init__(self, html, term):
         self._soap = BeautifulSoup(html, 'html.parser')
         self.term = term
+
+    @staticmethod
+    def __fix_url_without_http(url):
+        if url[0:2] == '//':
+            return 'https:' + url
+        else:
+            return url
 
     @property
     def definition(self) -> list:
@@ -52,30 +58,38 @@ class Parser:
         }
 
         els = self._soap.select('.phonitic-line')
-        if els:
-            el = els[0]
-            links = el.select('a')
-            phons = el.select('.Phonitic')
+        if not els:
+            return pron
 
-            try:
-                pron['BrEPhonetic'] = phons[0].get_text(strip=True)
-            except KeyError:
-                pass
+        el = els[0]
+        links = el.select('a')
+        phons = el.select('.Phonitic')
 
-            try:
-                pron['BrEUrl'] = url + links[0]['data-rel']
-            except (TypeError, KeyError):
-                pass
+        if not links:
+            # 可能是只有一个发音的情况
+            links = self._soap.select('div .gv_details .voice-button')
+            # 返回两个相同的。下载只会按照用户选择下载一个，这样至少可以保证总是有发音
+            links = [links[0], links[0]] if links else ''
 
-            try:
-                pron['AmEPhonetic'] = phons[1].get_text(strip=True)
-            except KeyError:
-                pass
+        try:
+            pron['BrEPhonetic'] = phons[0].get_text(strip=True)
+        except (KeyError, IndexError):
+            pass
 
-            try:
-                pron['AmEUrl'] = url + links[0]['data-rel']
-            except (TypeError, KeyError):
-                pass
+        try:
+            pron['BrEUrl'] = "{}{}".format('' if 'http' in links[0]['data-rel'] else url, links[0]['data-rel'])
+        except (TypeError, KeyError, IndexError):
+            pass
+
+        try:
+            pron['AmEPhonetic'] = phons[1].get_text(strip=True)
+        except (KeyError, IndexError):
+            pass
+
+        try:
+            pron['AmEUrl'] = "{}{}".format('' if 'http' in links[1]['data-rel'] else url, links[1]['data-rel'])
+        except (TypeError, KeyError, IndexError):
+            pass
 
         return pron
 
@@ -121,7 +135,7 @@ class Parser:
             try:
                 img = els[0]
                 if 'title' not in img.attrs:
-                    ret = img['src']
+                    ret = self.__fix_url_without_http(img['src'])
             except KeyError:
                 pass
         return ret
