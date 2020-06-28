@@ -44,7 +44,7 @@ class Eudict(AbstractDictionary):
 
     @staticmethod
     def loginCheckCallbackFn(cookie, content):
-        if 'EudicWeb' in cookie:
+        if 'EudicWebSession' in cookie:
             return True
         return False
 
