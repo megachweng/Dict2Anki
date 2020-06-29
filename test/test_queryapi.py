@@ -1,8 +1,8 @@
 import os
-
+import logging
 from addon.queryApi.eudict import API
 import pytest
-
+logger = logging.getLogger(__name__)
 api = API()
 
 keys = ('term', 'definition', 'phrase', 'image', 'sentence', 'BrEPhonetic', 'AmEPhonetic', 'BrEPron', 'AmEPron')
@@ -19,7 +19,7 @@ def get_missing_fileds_set(res):
 def test_eudict_no_phrase_and_image():
     res = api.query('stint')
     ret = get_missing_fileds_set(res)
-    expect = set(['image', 'phrase'])
+    expect = {'image', 'phrase'}
     assert ret == expect
 
 
@@ -32,14 +32,14 @@ def test_eudict_with_all():
 def test_eudict_with_none():
     res = api.query('asafesdf')
     ret = get_missing_fileds_set(res)
-    assert ret == set(keys) - set(['term'])
+    assert ret == set(keys) - {'term'}
 
 
 def test_eudict_implication():
     # 不包含图片，定义不在正常规则内，包含 trans
     res = api.query('implication')
     ret = get_missing_fileds_set(res)
-    expect = set(['image'])
+    expect = {'image'}
     assert ret == expect
 
 
@@ -47,7 +47,7 @@ def test_eudict_epitomize():
     # 不包含图片，定义不在正常规则内
     res = api.query('epitomize')
     ret = get_missing_fileds_set(res)
-    expect = set(['image', 'phrase'])
+    expect = {'image', 'phrase'}
     assert ret == expect
 
 
@@ -62,7 +62,7 @@ def test_eudict_divisional():
     # 又一种特殊情况，只有一个音标
     res = api.query('divisional')
     ret = get_missing_fileds_set(res)
-    expect = set(['image', 'AmEPhonetic'])
+    expect = {'image', 'AmEPhonetic'}
     assert expect == ret
 
 

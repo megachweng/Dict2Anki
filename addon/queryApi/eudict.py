@@ -147,7 +147,7 @@ class Parser:
         for el in els:
             try:
                 phrase = el.find('i').get_text(strip=True)
-                exp = el.find('div').get_text(strip=True)
+                exp = el.find(class_='exp').get_text(strip=True)
                 ret.append((phrase, exp))
             except AttributeError:
                 pass
