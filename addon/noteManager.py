@@ -53,10 +53,8 @@ def getOrCreateModel(modelName):
 
     logger.info(f'创建新模版:{modelName}')
     newModel = mw.col.models.new(modelName)
-    mw.col.models.add(newModel)
     for field in MODEL_FIELDS:
         mw.col.models.addField(newModel, mw.col.models.newField(field))
-    mw.col.models.update(newModel)
     return newModel
 
 
@@ -115,6 +113,7 @@ def getOrCreateModelCardTemplate(modelObject, cardTemplateName):
         }
     '''
     mw.col.models.addTemplate(modelObject, cardTemplate)
+    mw.col.models.add(modelObject)
 
 
 def addNoteToDeck(deckObject, modelObject, currentConfig: dict, oneQueryResult: dict):
