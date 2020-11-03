@@ -51,12 +51,15 @@ def getOrCreateModel(modelName):
             logger.warning('模版字段异常，自动删除重建')
             mw.col.models.rem(model)
 
-    logger.info(f'创建新模版:{modelName}')
     newModel = mw.col.models.new(modelName)
-    mw.col.models.add(newModel)
     for field in MODEL_FIELDS:
         mw.col.models.addField(newModel, mw.col.models.newField(field))
-    mw.col.models.update(newModel)
+    logger.info(f'创建新模版')
+    t = mw.col.models.newTemplate("Reverse")
+    t["qfmt"] = "{{Back}}"
+    t["afmt"] = "{{Front}}"
+    mw.col.models.addTemplate(newModel, t)
+    mw.col.models.add(newModel)
     return newModel
 
 
