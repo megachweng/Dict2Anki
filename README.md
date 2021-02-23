@@ -5,6 +5,22 @@
 **Dict2Anki** 是一款方便[有道词典](http://cidian.youdao.com/multi.html)、[欧陆词典](https://www.eudic.net/)用户同步生成单词本卡片至[Anki](https://apps.ankiweb.net/#download)的插件
 
 ### Change log
+* v6.1.4
+  * 修复Anki 2.1.4版本同步失败的问题 THX to <a href="https://github.com/megachweng/Dict2Anki/pull/92">@YLongo</a>
+  * 修复Anki 2.1.4版本首次同步默认到Default Deck的问题
+* v6.1.3
+    修复欧陆字典无法登录的问题 THX to <a href="https://github.com/megachweng/Dict2Anki/pull/84" rel="nofollow">@cythb</a>  
+* v6.1.2
+    修复有道单词本分组获取失败的问题  
+* v6.1.1
+    添加欧陆词典查询API THX to <a href="https://github.com/megachweng/Dict2Anki/pull/75" rel="nofollow">@wd</a>  
+* v6.1.0
+    * 支持第三方登陆
+    * 加入模版字段检查
+* v6.0.2
+    添加英英注释 THX to deluser8
+* v6.0.1
+    修复菜单栏不雅词汇
 * v6.0.0
     * 导入指定单词分组
     * 添加必应（bing）词典查询API

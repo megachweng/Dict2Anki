@@ -33,10 +33,14 @@ def getNotes(wordList, deckName) -> list:
     return notes
 
 
-def getOrCreateDeck(deckName):
+def getOrCreateDeck(deckName, model):
     deck_id = mw.col.decks.id(deckName)
     deck = mw.col.decks.get(deck_id)
+    mw.col.decks.select(deck['id'])
     mw.col.decks.save(deck)
+    mw.col.models.setCurrent(model)
+    model['did'] = deck['id']
+    mw.col.models.save(model)
     mw.col.reset()
     mw.reset()
     return deck
@@ -129,8 +133,10 @@ def addNoteToDeck(deckObject, modelObject, currentConfig: dict, oneQueryResult: 
         if oneQueryResult.get(configName):
             # 短语例句
             if configName in ['sentence', 'phrase'] and currentConfig[configName]:
-                newNote[f'{configName}Front'] = '\n'.join([f'<tr><td>{e.strip()}</td></tr>' for e, _ in oneQueryResult[configName]])
-                newNote[f'{configName}Back'] = '\n'.join([f'<tr><td>{e.strip()}<br>{c.strip()}</td></tr>' for e, c in oneQueryResult[configName]])
+                newNote[f'{configName}Front'] = '\n'.join(
+                    [f'<tr><td>{e.strip()}</td></tr>' for e, _ in oneQueryResult[configName]])
+                newNote[f'{configName}Back'] = '\n'.join(
+                    [f'<tr><td>{e.strip()}<br>{c.strip()}</td></tr>' for e, c in oneQueryResult[configName]])
             # 图片
             elif configName == 'image':
                 newNote[configName] = f'src="{oneQueryResult[configName]}"'

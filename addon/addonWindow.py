@@ -441,7 +441,7 @@ class Windows(QDialog, mainUI.Ui_Dialog):
         currentConfig = self.getAndSaveCurrentConfig()
         model = getOrCreateModel(MODEL_NAME)
         getOrCreateModelCardTemplate(model, 'default')
-        deck = getOrCreateDeck(self.deckComboBox.currentText())
+        deck = getOrCreateDeck(self.deckComboBox.currentText(), model=model)
 
         logger.info('同步点击')
         audiosDownloadTasks = []
