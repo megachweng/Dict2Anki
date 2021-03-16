@@ -1,8 +1,5 @@
-import re
-import hashlib
 import logging
 from math import ceil
-
 import requests
 from bs4 import BeautifulSoup
 from urllib3.util.retry import Retry
@@ -36,7 +33,7 @@ class Youdao(AbstractDictionary):
         :return: bool
         """
         rsp = requests.get('http://dict.youdao.com/login/acc/query/accountinfo', cookies=cookie, headers=self.headers)
-        if rsp.json()['code'] == 0:
+        if rsp.json().get('code', None) == 0:
             self.indexSoup = BeautifulSoup(rsp.text, features="html.parser")
             logger.info('Cookie有效')
             cookiesJar = requests.utils.cookiejar_from_dict(cookie, cookiejar=None, overwrite=True)

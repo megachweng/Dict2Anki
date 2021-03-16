@@ -2,6 +2,8 @@
 <strong>Dict2Anki</strong> 是一款方便<a href="http://cidian.youdao.com/multi.html" rel="nofollow">有道词典</a>、<a href="https://www.eudic.net/" rel="nofollow">欧陆词典</a>用户同步生成单词本卡片至<a href="https://apps.ankiweb.net/#download" rel="nofollow">Anki</a>的插件
 
 <strong>Change Logs</strong>:
+<strong>v6.1.5</strong>:
+    更新有道词典API，解决首次登录无法唤出登陆页的问题
 <strong>v6.1.4</strong>:
     修复Anki 2.1.4版本同步失败的问题 THX to <a href="https://github.com/megachweng/Dict2Anki/pull/92">@YLongo</a>
     修复Anki 2.1.4版本首次同步默认到Default Deck的问题
