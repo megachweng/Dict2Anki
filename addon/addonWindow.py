@@ -1,7 +1,9 @@
+import os
 import sys
 import logging
 import json
 from copy import deepcopy
+from tempfile import gettempdir
 
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QPlainTextEdit, QDialog, QListWidgetItem, QVBoxLayout, QPushButton
@@ -97,7 +99,8 @@ class Windows(QDialog, mainUI.Ui_Dialog):
             logger.removeHandler(QtHandler)
 
         # 防止 debug 信息写入stdout/stderr 导致 Anki 崩溃
-        logging.basicConfig(handlers=[logging.FileHandler('dict2anki.log', 'w', 'utf-8')], level=logging.DEBUG, format='[%(asctime)s][%(levelname)8s] -- %(message)s - (%(name)s)')
+        logFile = os.path.join(gettempdir(), 'dict2anki.log')
+        logging.basicConfig(handlers=[logging.FileHandler(logFile, 'w', 'utf-8')], level=logging.DEBUG, format='[%(asctime)s][%(levelname)8s] -- %(message)s - (%(name)s)')
 
         logTextBox = QPlainTextEdit(self)
         logTextBox.setLineWrapMode(QPlainTextEdit.NoWrap)
