@@ -1,4 +1,4 @@
-VERSION = 'v6.1.5'
+VERSION = 'v6.1.6'
 RELEASE_URL = 'https://github.com/megachweng/Dict2Anki'
 VERSION_CHECK_API = 'https://api.github.com/repos/megachweng/Dict2Anki/releases/latest'
 MODEL_NAME = f'Dict2Anki-{VERSION}'
