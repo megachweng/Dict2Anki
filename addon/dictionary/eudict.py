@@ -69,7 +69,7 @@ class Eudict(AbstractDictionary):
         :return:
         """
         try:
-            r = self.session.get(
+            r = self.session.post(
                 url='https://my.eudic.net/StudyList/WordsDataSource',
                 timeout=self.timeout,
                 data={'categoryid': groupId}
@@ -93,7 +93,7 @@ class Eudict(AbstractDictionary):
         }
         try:
             logger.info(f'获取单词本(f{groupName}-{groupId})第:{pageNo + 1}页')
-            r = self.session.get(
+            r = self.session.post(
                 url='https://my.eudic.net/StudyList/WordsDataSource',
                 timeout=self.timeout,
                 data=data
