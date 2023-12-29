@@ -1,10 +1,13 @@
 import pytest
-from PyQt5.QtCore import Qt
+# from PyQt5.QtCore import Qt
+# import aqt
+from aqt.qt import Qt
 
 from addon.addonWindow import Windows
 from addon.constants import VERSION
 import json
-from PyQt5.QtWidgets import QApplication
+# from PyQt5.QtWidgets import QApplication
+from aqt import QApplication
 import sys
 
 

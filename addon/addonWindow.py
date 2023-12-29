@@ -5,9 +5,10 @@ import json
 from copy import deepcopy
 from tempfile import gettempdir
 
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QPlainTextEdit, QDialog, QListWidgetItem, QVBoxLayout, QPushButton
-from PyQt5.QtCore import pyqtSlot, QThread, Qt
+# from PyQt5.QtGui import QIcon
+# from PyQt5.QtWidgets import QPlainTextEdit, QDialog, QListWidgetItem, QVBoxLayout, QPushButton
+# from PyQt5.QtCore import pyqtSlot, QThread, Qt
+from aqt.qt import *
 
 from .queryApi import apis
 from .UIForm import wordGroup, mainUI, icons_rc
@@ -103,7 +104,8 @@ class Windows(QDialog, mainUI.Ui_Dialog):
         logging.basicConfig(handlers=[logging.FileHandler(logFile, 'w', 'utf-8')], level=logging.DEBUG, format='[%(asctime)s][%(levelname)8s] -- %(message)s - (%(name)s)')
 
         logTextBox = QPlainTextEdit(self)
-        logTextBox.setLineWrapMode(QPlainTextEdit.NoWrap)
+        # logTextBox.setLineWrapMode(QPlainTextEdit.NoWrap)
+        logTextBox.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         layout = QVBoxLayout()
         layout.addWidget(logTextBox)
         self.logTab.setLayout(layout)
@@ -258,17 +260,17 @@ class Windows(QDialog, mainUI.Ui_Dialog):
 
         for groupName in [str(group_name) for group_name, _ in self.selectedDict.groups]:
             item = QListWidgetItem()
-            item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+            item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled)
             item.setText(groupName)
-            item.setCheckState(Qt.Unchecked)
+            item.setCheckState(Qt.CheckState.Unchecked)
             group.wordGroupListWidget.addItem(item)
 
         # 恢复上次选择的单词本分组
         if self.selectedGroups:
             for groupName in self.selectedGroups[self.currentConfig['selectedDict']]:
-                items = group.wordGroupListWidget.findItems(groupName, Qt.MatchExactly)
+                items = group.wordGroupListWidget.findItems(groupName, Qt.MatchFlag.MatchExactly)
                 for item in items:
-                    item.setCheckState(Qt.Checked)
+                    item.setCheckState(Qt.CheckState.Checked)
         else:
             self.selectedGroups = [list()] * len(dictionaries)
 
@@ -280,7 +282,7 @@ class Windows(QDialog, mainUI.Ui_Dialog):
             self.mainTab.setEnabled(False)
 
             selectedGroups = [group.wordGroupListWidget.item(index).text() for index in range(group.wordGroupListWidget.count()) if
-                              group.wordGroupListWidget.item(index).checkState() == Qt.Checked]
+                              group.wordGroupListWidget.item(index).checkState() == Qt.CheckState.Checked]
             # 保存分组记录
             self.selectedGroups[self.currentConfig['selectedDict']] = selectedGroups
             self.progressBar.setValue(0)
@@ -318,7 +320,7 @@ class Windows(QDialog, mainUI.Ui_Dialog):
         """一个分组获取完毕事件"""
         for word in words:
             wordItem = QListWidgetItem(word, self.newWordListWidget)
-            wordItem.setData(Qt.UserRole, None)
+            wordItem.setData(Qt.ItemDataRole.UserRole, None)
         self.newWordListWidget.clearSelection()
 
     @pyqtSlot()
@@ -340,7 +342,7 @@ class Windows(QDialog, mainUI.Ui_Dialog):
 
         for word in needToDeleteWords:
             item = QListWidgetItem(word)
-            item.setCheckState(Qt.Checked)
+            item.setCheckState(Qt.CheckState.Checked)
             item.setIcon(delIcon)
             self.needDeleteWordListWidget.addItem(item)
 
@@ -409,7 +411,7 @@ class Windows(QDialog, mainUI.Ui_Dialog):
         doneIcon = QIcon(':/icons/done.png')
         wordItem = self.newWordListWidget.item(row)
         wordItem.setIcon(doneIcon)
-        wordItem.setData(Qt.UserRole, result)
+        wordItem.setData(Qt.ItemDataRole.UserRole, result)
 
     @pyqtSlot(int)
     def on_thisRowFailed(self, row):
@@ -423,7 +425,7 @@ class Windows(QDialog, mainUI.Ui_Dialog):
 
         for i in range(self.newWordListWidget.count()):
             wordItem = self.newWordListWidget.item(i)
-            if not wordItem.data(Qt.UserRole):
+            if not wordItem.data(Qt.ItemDataRole.UserRole):
                 failed.append(wordItem.text())
 
         if failed:
@@ -436,7 +438,7 @@ class Windows(QDialog, mainUI.Ui_Dialog):
     @pyqtSlot()
     def on_syncBtn_clicked(self):
 
-        failedGenerator = (self.newWordListWidget.item(row).data(Qt.UserRole) is None for row in range(self.newWordListWidget.count()))
+        failedGenerator = (self.newWordListWidget.item(row).data(Qt.ItemDataRole.UserRole) is None for row in range(self.newWordListWidget.count()))
         if any(failedGenerator):
             if not askUser('存在未查询或失败的单词，确定要加入单词本吗？\n 你可以选择失败的单词点击 "查询按钮" 来重试。'):
                 return
@@ -461,7 +463,7 @@ class Windows(QDialog, mainUI.Ui_Dialog):
         added = 0
         for row in range(newWordCount):
             wordItem = self.newWordListWidget.item(row)
-            wordItemData = wordItem.data(Qt.UserRole)
+            wordItemData = wordItem.data(Qt.ItemDataRole.UserRole)
             if wordItemData:
                 addNoteToDeck(deck, model, currentConfig, wordItemData)
                 added += 1
@@ -496,7 +498,7 @@ class Windows(QDialog, mainUI.Ui_Dialog):
         needToDeleteWordItems = [
             self.needDeleteWordListWidget.item(row)
             for row in range(self.needDeleteWordListWidget.count())
-            if self.needDeleteWordListWidget.item(row).checkState() == Qt.Checked
+            if self.needDeleteWordListWidget.item(row).checkState() == Qt.CheckState.Checked
         ]
         needToDeleteWords = [i.text() for i in needToDeleteWordItems]
 

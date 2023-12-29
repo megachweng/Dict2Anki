@@ -1,6 +1,13 @@
 beautifulsoup4==4.7.1
-PyQt5==5.9.2
-pytest==4.3.1
-pytest-mock==1.10.1
-pytest-qt==3.2.2
+pyqt6==6.6.0
+pyqt6-qt6==6.6.0
+pyqt6-webengine==6.6.0
+pyqt6-webengine-qt6==6.6.0
+pyqt6_sip==13.6.0
+pytest
+pytest-mock
+pytest-qt
 requests==2.21.0
+aqt==23.10.1
+urllib3==1.24.3
+anki==23.10.1

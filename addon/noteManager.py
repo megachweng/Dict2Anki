@@ -15,7 +15,7 @@ def getDeckList():
 
 
 def getWordsByDeck(deckName) -> [str]:
-    notes = mw.col.findNotes(f'deck:"{deckName}"')
+    notes = mw.col.find_notes(f'deck:"{deckName}"')
     words = []
     for nid in notes:
         note = mw.col.getNote(nid)
