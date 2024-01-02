@@ -1,5 +1,3 @@
-import traceback
-
 try:
     from aqt import mw
     from .addon.addonWindow import Windows

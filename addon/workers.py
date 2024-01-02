@@ -1,5 +1,8 @@
 import json
 import logging
+import tempfile
+import traceback
+
 import requests
 from urllib3 import Retry
 from itertools import chain
@@ -7,7 +10,9 @@ from .misc import ThreadPool
 from requests.adapters import HTTPAdapter
 from .constants import VERSION, VERSION_CHECK_API
 # from PyQt5.QtCore import QObject, pyqtSignal, QThread
-from aqt import QObject, pyqtSignal, QThread
+from aqt import QObject, pyqtSignal, QThread, mw
+import os
+from tempfile import gettempdir
 
 
 class VersionCheckWorker(QObject):
@@ -117,7 +122,7 @@ class QueryWorker(QObject):
             self.tick.emit()
             return queryResult
 
-        with ThreadPool(max_workers=3) as executor:
+        with ThreadPool(max_workers=1) as executor:
             for word in self.wordList:
                 executor.submit(_query, word['term'], word['row'])
 
@@ -145,14 +150,20 @@ class AudioDownloadWorker(QObject):
             try:
                 if currentThread.isInterruptionRequested():
                     return
+                # fix macos can't create file, so create file in temp dir
+                fileName = gettempdir() + "/anki_temp/" + fileName
                 r = self.session.get(url, stream=True)
                 with open(fileName, 'wb') as f:
                     for chunk in r.iter_content(chunk_size=1024):
                         if chunk:
                             f.write(chunk)
-                self.logger.info(f'{fileName} 下载完成')
+                    self.logger.info(f'{fileName} 下载完成')
+                mw.col.media.add_file(fileName)
+                os.remove(fileName)
+                self.logger.info(f"{fileName} 添加到媒体库,临时文件已删除")
             except Exception as e:
                 self.logger.warning(f'下载{fileName}:{url}异常: {e}')
+                traceback.print_exc()
             finally:
                 self.tick.emit()
 

@@ -101,7 +101,7 @@ class Windows(QDialog, mainUI.Ui_Dialog):
 
         # 防止 debug 信息写入stdout/stderr 导致 Anki 崩溃
         logFile = os.path.join(gettempdir(), 'dict2anki.log')
-        logging.basicConfig(handlers=[logging.FileHandler(logFile, 'w', 'utf-8')], level=logging.DEBUG, format='[%(asctime)s][%(levelname)8s] -- %(message)s - (%(name)s)')
+        logging.basicConfig(handlers=[logging.FileHandler(logFile, 'w', 'utf-8')], level=logging.INFO, format='[%(asctime)s][%(levelname)8s] -- %(message)s - (%(name)s)')
 
         logTextBox = QPlainTextEdit(self)
         # logTextBox.setLineWrapMode(QPlainTextEdit.NoWrap)
