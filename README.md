@@ -1,10 +1,13 @@
+
 ## Dict2Anki
 [![Build Status](https://travis-ci.org/megachweng/Dict2Anki.svg?branch=master)](https://travis-ci.org/megachweng/Dict2Anki)
-> [Anki2.0版本插件](https://github.com/megachweng/Dict2Anki/releases/tag/v4.0) 不再维护
- 
+
 **Dict2Anki** 是一款方便[有道词典](http://cidian.youdao.com/multi.html)、[欧陆词典](https://www.eudic.net/)用户同步生成单词本卡片至[Anki](https://apps.ankiweb.net/#download)的插件
 
+
 ### Change log
+**个人精力有限不再维护**
+___
 * v6.1.6
   * 修复ARM Mac启动日志出错的问题 THX to <a href="https://github.com/megachweng/Dict2Anki/pull/108">@xbot</a>  
 * v6.1.5  
